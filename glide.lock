@@ -1,0 +1,26 @@
+hash: 46c4bea9409f5ed99cdce326b54eae9466e38c5c4b452885f12acd2d2c1a9d16
+updated: 2016-12-26T14:36:16.781945463+08:00
+imports:
+- name: github.com/astaxie/beego
+  version: 90999717dda6193c6f970eec52e289b0a9e74998
+  subpackages:
+  - config
+  - context
+  - grace
+  - logs
+  - session
+  - toolbox
+  - utils
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 346938d642f2ec3594ed81d874461961cd0faa76
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 2402e8e7a02fc811447d11f881aa9746cdc57983
+  subpackages:
+  - assert
