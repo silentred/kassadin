@@ -54,6 +54,7 @@ func InitRoutes(e *echo.Echo) {
 }
 
 func initMiddleware(e *echo.Echo) {
+	e.Use(middleware.Recover())
 	// use logger middleware
 	e.Use(middleware.Logger())
 }
