@@ -1,6 +1,8 @@
 package main
 
 import (
+	"beegotest/router"
+
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/log"
 )
@@ -13,7 +15,7 @@ func init() {
 
 func main() {
 	initLogger()
-	initRoutes()
+	router.InitRoutes(Echo)
 
 	Echo.Start(":8090")
 }

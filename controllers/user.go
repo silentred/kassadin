@@ -6,8 +6,6 @@ import (
 
 	"strconv"
 
-	"fmt"
-
 	"github.com/labstack/echo"
 )
 
@@ -24,9 +22,11 @@ func (u *UserController) GetByID(c echo.Context) error {
 	id := c.Param("id")
 	intID, _ := strconv.Atoi(id)
 
-	fmt.Println("userController: id is ", id)
+	//fmt.Println("userController: id is ", id)
 
 	user := u.sv.GetByID(intID)
+	//time.Sleep(time.Duration(rand.Int31n(100)) * time.Microsecond)
+
 	c.JSON(http.StatusOK, user)
 
 	return nil
