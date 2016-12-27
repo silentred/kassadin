@@ -3,6 +3,7 @@ import:
 - package: github.com/labstack/echo
   version: ^3.0.3
 - package: github.com/ipfans/echo-session
+- package: github.com/spf13/viper
 testImport:
 - package: github.com/stretchr/testify
   version: ^1.1.x
