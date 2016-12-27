@@ -1,26 +1,39 @@
-hash: 46c4bea9409f5ed99cdce326b54eae9466e38c5c4b452885f12acd2d2c1a9d16
-updated: 2016-12-26T14:36:16.781945463+08:00
+hash: 89d6dbce082d1e19b4e3fb243ef5252609ccbc7ad339e26801413c9da14e57b1
+updated: 2016-12-27T12:04:43.358606046+08:00
 imports:
-- name: github.com/astaxie/beego
-  version: 90999717dda6193c6f970eec52e289b0a9e74998
+- name: github.com/ipfans/echo-session
+  version: 096a7ece96ba71653727307c5c29dd1e26f7160a
+- name: github.com/labstack/echo
+  version: 8d504c1b699c757b267255c53b3e5219f9974abc
+- name: github.com/labstack/gommon
+  version: b2765095a572012ea4828c9596fefd824c2aee72
   subpackages:
-  - config
+  - color
+  - log
+- name: github.com/mattn/go-colorable
+  version: d228849504861217f796da67fae4f6e347643f15
+- name: github.com/mattn/go-isatty
+  version: 30a891c33c7cde7b02a981314b4228ec99380cca
+- name: github.com/tylerb/graceful
+  version: 4df1190835320af7076dfcf27b3d071fd3612caf
+- name: github.com/valyala/fasttemplate
+  version: 3b874956e03f1636d171bda64b130f9135f42cff
+- name: golang.org/x/crypto
+  version: f6b343c37ca80bfa8ea539da67a0b621f84fab1d
+  subpackages:
+  - acme
+  - acme/autocert
+- name: golang.org/x/net
+  version: 45e771701b814666a7eb299e6c7a57d0b1799e91
+  subpackages:
   - context
-  - grace
-  - logs
-  - session
-  - toolbox
-  - utils
+  - context/ctxhttp
+- name: golang.org/x/sys
+  version: d75a52659825e75fff6158388dddc6a5b04f9ba5
+  subpackages:
+  - unix
 testImports:
-- name: github.com/davecgh/go-spew
-  version: 346938d642f2ec3594ed81d874461961cd0faa76
-  subpackages:
-  - spew
-- name: github.com/pmezard/go-difflib
-  version: 792786c7400a136282c1664665ae0a8db921c6c2
-  subpackages:
-  - difflib
 - name: github.com/stretchr/testify
-  version: 2402e8e7a02fc811447d11f881aa9746cdc57983
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:
   - assert

@@ -1,31 +1,27 @@
 package main
 
 import (
-	_ "beegotest/routers"
-	"fmt"
-
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/labstack/echo"
+	"github.com/labstack/gommon/log"
 )
 
+var Echo *echo.Echo
+
+func init() {
+	Echo = echo.New()
+}
+
 func main() {
-	// if beego.BConfig.RunMode == "dev" {
-	// 	beego.BConfig.WebConfig.DirectoryIndex = true
-	// 	beego.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
-	// }
+	initLogger()
+	initRoutes()
 
-	testConfig()
-	testLog()
-	beego.Run()
+	Echo.Start(":8090")
 }
 
-func testConfig() {
-	user := beego.AppConfig.String("mysqluser")
-	fmt.Println(user)
+func initConfig() {
 }
 
-func testLog() {
-	logs.Async()
-	// need to set location by workingDir
-	logs.SetLogger(logs.AdapterFile, `{"filename":"storage/log/test.log"}`)
+func initLogger() {
+	Echo.Debug = true
+	Echo.Logger.SetLevel(log.DEBUG)
 }

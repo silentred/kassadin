@@ -1,7 +1,10 @@
 package: beegotest
 import:
-- package: github.com/astaxie/beego
-  version: ^1.7.x
+- package: github.com/labstack/echo
+  version: ^3.0.3
+- package: github.com/ipfans/echo-session
 testImport:
 - package: github.com/stretchr/testify
   version: ^1.1.x
+  subpackages:
+  - assert 

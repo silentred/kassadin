@@ -13,7 +13,7 @@ LINUX     := "Linux"
 MAC       := "Darwin"
 PACKAGES  := $$(go list ./...| grep -vE 'vendor')
 FILES     := $$(find . -name '*.go' | grep -vE 'vendor')
-TARGET	  := "server"
+TARGET	  := "bin/server"
 
 test:
 	$(GOTEST) $(PACKAGES) -cover

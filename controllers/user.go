@@ -1,30 +1,33 @@
 package controllers
 
 import (
-	"beegotest/models"
+	"beegotest/service"
+	"net/http"
 
-	"github.com/astaxie/beego"
+	"strconv"
+
+	"fmt"
+
+	"github.com/labstack/echo"
 )
 
-// Operations about Users
 type UserController struct {
-	beego.Controller
+	sv service.UserService
 }
 
-// @Title GetAll
-// @Description get all Users
-// @Success 200 {object} models.User
-// @router / [get]
-func (u *UserController) GetAll() {
+func NewUserController(sv service.UserService) *UserController {
+	return &UserController{sv}
+}
+
+func (u *UserController) GetByID(c echo.Context) error {
 	// 解析参数，验证参数
+	id := c.Param("id")
+	intID, _ := strconv.Atoi(id)
 
-	users := models.GetAllUsers()
-	u.Data["json"] = users
+	fmt.Println("userController: id is ", id)
 
-	// 需要再封装一层，因为需要记录 req 参数, resp 结果, 建议保存到 input.SetData() 中
-	// 这样在 timerMiddleware 中可以一起记录
+	user := u.sv.GetByID(intID)
+	c.JSON(http.StatusOK, user)
 
-	// 返回错误时，需要手动设置 code
-	u.Ctx.Output.SetStatus(403)
-	u.ServeJSON()
+	return nil
 }
