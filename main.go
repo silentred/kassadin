@@ -5,12 +5,15 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/log"
+	"github.com/spf13/viper"
 )
 
+// Echo is the web engine
 var Echo *echo.Echo
 
 func init() {
 	Echo = echo.New()
+	initConfig()
 }
 
 func main() {
@@ -21,6 +24,12 @@ func main() {
 }
 
 func initConfig() {
+	viper.AddConfigPath(".")
+	viper.SetConfigName("config")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic("cannot find config file in working directory.")
+	}
 }
 
 func initLogger() {
