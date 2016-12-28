@@ -2,8 +2,12 @@ package: beegotest
 import:
 - package: github.com/labstack/echo
   version: ^3.0.3
-- package: github.com/ipfans/echo-session
+- package: github.com/silentred/echo-session
+- package: github.com/silentred/echo-log
 - package: github.com/spf13/viper
+- package: github.com/astaxie/beego
+  subpackages:
+  - orm
 testImport:
 - package: github.com/stretchr/testify
   version: ^1.1.x

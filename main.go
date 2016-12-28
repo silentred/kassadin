@@ -3,8 +3,11 @@ package main
 import (
 	"beegotest/router"
 
+	"beegotest/util"
+	"path/filepath"
+
 	"github.com/labstack/echo"
-	"github.com/labstack/gommon/log"
+	elog "github.com/silentred/echo-log"
 	"github.com/spf13/viper"
 )
 
@@ -14,11 +17,13 @@ var Echo *echo.Echo
 func init() {
 	Echo = echo.New()
 	initConfig()
+	initLogger()
 }
 
 func main() {
-	initLogger()
+
 	router.InitRoutes(Echo)
+	router.InitMiddleware(Echo)
 
 	Echo.Start(":8090")
 }
@@ -33,6 +38,21 @@ func initConfig() {
 }
 
 func initLogger() {
-	Echo.Debug = true
-	Echo.Logger.SetLevel(log.DEBUG)
+	rotate := viper.GetBool("app.logRotate")
+	provider := viper.GetString("app.logProvider")
+	mode := viper.GetString("app.runMode")
+	appName := viper.GetString("app.name")
+	if rotate && provider == "file" {
+		path := filepath.Join(util.SelfDir(), "storage", "log")
+		limitSize := 100 << 20 // 100 MB
+		Echo.Logger = elog.NewLogger(path, appName, limitSize)
+	}
+
+	switch mode {
+	case "dev":
+		Echo.Logger.SetLevel(elog.DEBUG)
+	case "prod":
+		Echo.Logger.SetLevel(elog.WARN)
+	}
+
 }

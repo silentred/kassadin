@@ -1,4 +1,4 @@
-package hack
+package util
 
 import (
 	"reflect"

@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"beegotest/service"
-	uhttp "beegotest/util/http"
+	"beegotest/util"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,7 +15,7 @@ import (
 func Test_UserGetID(t *testing.T) {
 	// Setup
 	e := echo.New()
-	req, err := uhttp.NewHTTPReqeust(echo.GET, "/v1/user/123", nil, nil, nil)
+	req, err := util.NewHTTPReqeust(echo.GET, "/v1/user/123", nil, nil, nil)
 
 	if assert.NoError(t, err) {
 		rec := httptest.NewRecorder()

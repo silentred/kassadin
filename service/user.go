@@ -1,20 +1,36 @@
 package service
 
+import (
+	"fmt"
+
+	"github.com/astaxie/beego/orm"
+)
+
 type UserService interface {
 	GetByID(int) *User
 }
 
 type User struct {
-	Id       string
-	Username string
-	Password string
+	Id       uint64  `orm:"pk;column(uid)" json:"uid"`
+	Username string  `orm:"column(username)" json:"username"`
+	Income   float64 `orm:"column(income)" json:"income"`
+}
+
+func (u *User) TableName() string {
+	return "affi_user"
 }
 
 type UserSV struct {
-	// has db
+	ormer orm.Ormer
 }
 
-func (*UserSV) GetByID(id int) *User {
-	u := User{"user_11111", "astaxie", "11111"}
-	return &u
+func (u *UserSV) GetByID(id int) *User {
+	user := User{Id: uint64(id)}
+	err := u.ormer.Read(&user)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	return &user
 }

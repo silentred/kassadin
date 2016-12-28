@@ -4,9 +4,17 @@ import (
 	"beegotest/controllers"
 	"beegotest/filter"
 	"beegotest/service"
+	"os"
+	"path/filepath"
+
+	"fmt"
+
+	"beegotest/util"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	session "github.com/silentred/echo-session"
+	"github.com/spf13/viper"
 )
 
 type routeInfo struct {
@@ -17,8 +25,6 @@ type routeInfo struct {
 }
 
 func InitRoutes(e *echo.Echo) {
-	initMiddleware(e)
-
 	// initialize controlllers
 	user := controllers.NewUserController(&service.UserSV{})
 
@@ -53,8 +59,48 @@ func InitRoutes(e *echo.Echo) {
 
 }
 
-func initMiddleware(e *echo.Echo) {
-	e.Use(middleware.Recover())
+func InitMiddleware(e *echo.Echo) {
 	// use logger middleware
 	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	// session middleware
+	setupSession(e)
+}
+
+func setupSession(e *echo.Echo) {
+	var enable bool
+	var provider string
+	enable = viper.GetBool("app.sessionEnable")
+	provider = viper.GetString("app.sessionProvider")
+
+	if enable {
+		switch provider {
+		case "file":
+			err := setupFileSession(e)
+			if err != nil {
+				panic(err)
+			}
+		default:
+			panic("only support file provider for session")
+		}
+	}
+}
+
+func setupFileSession(e *echo.Echo) error {
+	workDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		return err
+	}
+
+	sessionPath := filepath.Join(workDir, "storage", "session")
+	if !util.FileExists(sessionPath) {
+		fmt.Printf("path not exists: %s, use /tmp instead", sessionPath)
+		sessionPath = "/tmp"
+	}
+
+	store := session.NewFileSystemStoreStore(sessionPath, []byte("secret"))
+
+	e.Use(session.Sessions("GSESSION", store))
+
+	return nil
 }
