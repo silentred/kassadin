@@ -1,13 +1,12 @@
 package main
 
 import (
-	"beegotest/router"
-
-	"beegotest/util"
 	"path/filepath"
 
 	"github.com/labstack/echo"
 	elog "github.com/silentred/echo-log"
+	"github.com/silentred/template/router"
+	"github.com/silentred/template/util"
 	"github.com/spf13/viper"
 )
 

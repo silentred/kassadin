@@ -6,6 +6,7 @@ import (
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
+	redis "gopkg.in/redis.v5"
 )
 
 type MysqlInfo struct {
@@ -32,7 +33,9 @@ var (
 	mysqlInfo MysqlInfo
 	redisInfo RedisInfo
 	// mysql ORM
-	ormer orm.Ormer
+	mysqlORM orm.Ormer
+	// redis client
+	redisClient *redis.Client
 )
 
 func init() {
@@ -65,11 +68,24 @@ func initDBInfo() {
 	}
 }
 
-func InitMysqlORM(myInfo MysqlInfo) {
-	fmt.Println(myInfo.String())
+func InitMysqlORM(myInfo MysqlInfo) orm.Ormer {
 	orm.RegisterDriver("mysql", orm.DRMySQL)
 	orm.RegisterDataBase("default", "mysql", myInfo.String())
 	orm.RegisterModel(new(User))
 
-	ormer = orm.NewOrm()
+	mysqlORM = orm.NewOrm()
+
+	return mysqlORM
+}
+
+func InitRedisClient(redisInfo RedisInfo) *redis.Client {
+	addr := fmt.Sprintf("%s:%d", redisInfo.Host, redisInfo.Port)
+	client := redis.NewClient(&redis.Options{
+		Addr:     addr,
+		DB:       redisInfo.Database,
+		Password: "", // no password set
+	})
+
+	redisClient = client
+	return client
 }

@@ -1,4 +1,4 @@
-package: beegotest
+package: github.com/silentred/template
 import:
 - package: github.com/labstack/echo
   version: ^3.0.3
@@ -6,11 +6,11 @@ import:
 - package: github.com/silentred/echo-log
 - package: github.com/spf13/viper
 - package: github.com/astaxie/beego
+  version: ^1.7.2
   subpackages:
   - orm
 testImport:
 - package: github.com/stretchr/testify
   version: ^1.1.x
   subpackages:
-  - assert 
-
+  - assert

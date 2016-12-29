@@ -1,19 +1,17 @@
 package router
 
 import (
-	"beegotest/controllers"
-	"beegotest/filter"
-	"beegotest/service"
+	"fmt"
 	"os"
 	"path/filepath"
-
-	"fmt"
-
-	"beegotest/util"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	session "github.com/silentred/echo-session"
+	"github.com/silentred/template/controllers"
+	"github.com/silentred/template/filter"
+	"github.com/silentred/template/service"
+	"github.com/silentred/template/util"
 	"github.com/spf13/viper"
 )
 

@@ -1,9 +1,14 @@
 package service
 
+import (
+	"github.com/stretchr/testify/mock"
+)
+
 type UserMockSV struct {
+	mock.Mock
 }
 
-func (*UserMockSV) GetByID(id int) *User {
-	u := User{123, "Jason", 12}
-	return &u
+func (u *UserMockSV) GetByID(id int) *User {
+	args := u.Called(id)
+	return args.Get(0).(*User)
 }
