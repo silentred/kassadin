@@ -30,26 +30,22 @@ type RedisInfo struct {
 }
 
 var (
-	mysqlInfo MysqlInfo
-	redisInfo RedisInfo
+	MysqlConfig MysqlInfo
+	RedisConfig RedisInfo
 	// mysql ORM
-	mysqlORM orm.Ormer
+	MysqlORM orm.Ormer
 	// redis client
-	redisClient *redis.Client
+	RedisClient *redis.Client
 )
 
-func init() {
-	initDBInfo()
-}
-
-func initDBInfo() {
+func InitDBInfo() {
 	mysqlHost := viper.GetString("mysql.host")
 	mysqlPort := viper.GetInt("mysql.port")
 	mysqlUser := viper.GetString("mysql.user")
 	mysqlPwd := viper.GetString("mysql.password")
 	mysqlDB := viper.GetString("mysql.db")
 
-	mysqlInfo = MysqlInfo{
+	MysqlConfig = MysqlInfo{
 		Host:     mysqlHost,
 		Port:     mysqlPort,
 		User:     mysqlUser,
@@ -61,7 +57,7 @@ func initDBInfo() {
 	redisPort := viper.GetInt("redis.port")
 	redisDB := viper.GetInt("redis.db")
 
-	redisInfo = RedisInfo{
+	RedisConfig = RedisInfo{
 		Host:     redisHost,
 		Port:     redisPort,
 		Database: redisDB,
@@ -73,9 +69,9 @@ func InitMysqlORM(myInfo MysqlInfo) orm.Ormer {
 	orm.RegisterDataBase("default", "mysql", myInfo.String())
 	orm.RegisterModel(new(User))
 
-	mysqlORM = orm.NewOrm()
+	MysqlORM = orm.NewOrm()
 
-	return mysqlORM
+	return MysqlORM
 }
 
 func InitRedisClient(redisInfo RedisInfo) *redis.Client {
@@ -86,6 +82,6 @@ func InitRedisClient(redisInfo RedisInfo) *redis.Client {
 		Password: "", // no password set
 	})
 
-	redisClient = client
+	RedisClient = client
 	return client
 }

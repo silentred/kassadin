@@ -24,7 +24,8 @@ type routeInfo struct {
 
 func InitRoutes(e *echo.Echo) {
 	// initialize controlllers
-	user := controllers.NewUserController(&service.UserSV{})
+	userSV := service.NewUserSV(service.MysqlORM)
+	user := controllers.NewUserController(userSV)
 
 	// custom middleware
 	metrics := filter.Metrics()

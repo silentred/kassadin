@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo"
 	elog "github.com/silentred/echo-log"
 	"github.com/silentred/template/router"
+	"github.com/silentred/template/service"
 	"github.com/silentred/template/util"
 	"github.com/spf13/viper"
 )
@@ -20,6 +21,8 @@ func init() {
 }
 
 func main() {
+	service.InitDBInfo()
+	service.InitMysqlORM(service.MysqlConfig)
 
 	router.InitRoutes(Echo)
 	router.InitMiddleware(Echo)
@@ -29,6 +32,7 @@ func main() {
 
 func initConfig() {
 	viper.AddConfigPath(".")
+	viper.AddConfigPath(util.SelfDir())
 	viper.SetConfigName("config")
 	err := viper.ReadInConfig()
 	if err != nil {

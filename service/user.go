@@ -23,6 +23,10 @@ type UserSV struct {
 	ormer orm.Ormer
 }
 
+func NewUserSV(ormer orm.Ormer) *UserSV {
+	return &UserSV{ormer}
+}
+
 // GetByID gets user by its ID
 func (u *UserSV) GetByID(id int) *User {
 	user := User{Id: uint64(id)}
