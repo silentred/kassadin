@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/labstack/echo"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,8 +20,12 @@ func TestRoutes(t *testing.T) {
 		{echo.DELETE, "/v1/user/123", true},
 	}
 
+	viper.Set("app.sessionEnable", true)
+	viper.Set("app.sessionProvider", "file")
+
 	e := echo.New()
 	InitRoutes(e)
+	InitMiddleware(e)
 	r := e.Router()
 
 	for _, test := range tests {

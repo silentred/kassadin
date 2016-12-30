@@ -42,20 +42,28 @@ func initConfig() {
 
 func initLogger() {
 	rotate := viper.GetBool("app.logRotate")
+	logLimit := viper.GetString("app.logLimit")
 	provider := viper.GetString("app.logProvider")
 	mode := viper.GetString("app.runMode")
 	appName := viper.GetString("app.name")
 	if rotate && provider == "file" {
 		path := filepath.Join(util.SelfDir(), "storage", "log")
-		limitSize := 100 << 20 // 100 MB
-		Echo.Logger = elog.NewLogger(path, appName, limitSize)
+		limitSize, err := util.ParseByteSize(logLimit) // 100 MB
+		if err != nil {
+			panic(err)
+		}
+		util.InitFileLogger(path, appName, limitSize)
 	}
 
 	switch mode {
 	case "dev":
 		Echo.Logger.SetLevel(elog.DEBUG)
+		if util.Logger != nil {
+			util.Logger.SetLevel(elog.DEBUG)
+		}
 	case "prod":
-		Echo.Logger.SetLevel(elog.WARN)
+		if util.Logger != nil {
+			util.Logger.SetLevel(elog.INFO)
+		}
 	}
-
 }
