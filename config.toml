@@ -1,7 +1,7 @@
 [app]
 runMode = "dev"
 name = "webapp"
-sessionEnable = true
+sessionEnable = false
 sessionProvider = "file"
 logProvider = "file"
 logRotate = true

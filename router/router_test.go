@@ -14,10 +14,7 @@ func TestRoutes(t *testing.T) {
 		path   string
 		result bool
 	}{
-		{echo.GET, "/v1/user/123", true},
-		{echo.PUT, "/v1/user/123", true},
-		{echo.POST, "/v1/user/123", true},
-		{echo.DELETE, "/v1/user/123", true},
+		{echo.POST, "/promotion/generatelink", false},
 	}
 
 	viper.Set("app.sessionEnable", true)

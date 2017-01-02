@@ -5,6 +5,8 @@ import (
 
 	redis "gopkg.in/redis.v5"
 
+	"fmt"
+
 	"github.com/astaxie/beego/orm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -19,11 +21,12 @@ func testUserMock(t *testing.T) {
 	testObj := new(UserMockSV)
 
 	// setup expectations
-	testObj.On("GetByID", 123).Return(&User{123, "jason", 1.2})
+	testObj.On("GetPlayTokenByDeviceID", "d123").Return("u123", nil)
 
 	// call the code we are testing
-	user := testObj.GetByID(123)
-	assert.Equal(t, "jason", user.Username)
+	token, err := testObj.GetPlayTokenByDeviceID("d123")
+	assert.NoError(t, err)
+	assert.Equal(t, "u123", token)
 
 	// assert that the expectations were met
 	testObj.AssertExpectations(t)
@@ -45,16 +48,16 @@ type DBTestSuite struct {
 
 // SetupTest runs before each test
 func (suite *DBTestSuite) SetupTest() {
-	if suite.ormer == nil {
-		mysqlInfo := MysqlInfo{
-			Host:     "127.0.0.1",
-			Port:     3306,
-			User:     "jason",
-			Password: "jason",
-			Database: "fenda",
-		}
-		suite.ormer = InitMysqlORM(mysqlInfo)
-	}
+	// if suite.ormer == nil {
+	// 	mysqlInfo := MysqlInfo{
+	// 		Host:     "127.0.0.1",
+	// 		Port:     3306,
+	// 		User:     "jason",
+	// 		Password: "jason",
+	// 		Database: "fenda",
+	// 	}
+	// 	suite.ormer = InitMysqlORM(mysqlInfo)
+	// }
 
 	if suite.redisCli == nil {
 		redisInfo := RedisInfo{
@@ -67,17 +70,21 @@ func (suite *DBTestSuite) SetupTest() {
 }
 
 // All methods that begin with "Test" are run as tests within a suite.
-func (suite *DBTestSuite) TestMysql() {
-	usv := UserSV{suite.ormer}
-	user := usv.GetByID(10010026)
-	suite.Equal(true, len(user.Username) > 0)
-}
+// func (suite *DBTestSuite) TestMysql() {
+// 	usv := UserSV{suite.ormer}
+// 	user := usv.GetByID(10010026)
+// 	suite.Equal(true, len(user.Username) > 0)
+// }
 
 func (suite *DBTestSuite) TestRedis() {
-	err := suite.redisCli.Set("foo", "bar", 0).Err()
-	suite.Nil(err)
+	userSV := UserSV{redisCli: suite.redisCli}
+	deviceID := "d123"
+	// token, err := userSV.getPlayToken(deviceID)
+	// suite.Assert().Equal(redis.Nil, err)
+	// suite.Assert().Equal("", token)
 
-	res, err := suite.redisCli.Get("foo").Result()
-	suite.Nil(err)
-	suite.Equal("bar", res)
+	token, err := userSV.GetPlayTokenByDeviceID(deviceID)
+	suite.Assert().NoError(err)
+	suite.Assert().Equal(true, len(token) > 0)
+	fmt.Println(token)
 }

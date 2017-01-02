@@ -24,19 +24,20 @@ type routeInfo struct {
 
 func InitRoutes(e *echo.Echo) {
 	// initialize controlllers
-	userSV := service.NewUserSV(service.MysqlORM)
-	user := controllers.NewUserController(userSV)
+	userSV := service.NewUserSV(service.RedisClient)
+	ituneSV := service.NewItunesSV(service.AdToken, service.RedisClient)
+
+	user := controllers.NewUserController(userSV, ituneSV)
 
 	// custom middleware
 	metrics := filter.Metrics()
 
 	// v1 group
-	v1Group := e.Group("/v1")
+	v1Group := e.Group("/promotion")
+	v1Group.Use(metrics)
+
 	routes := []routeInfo{
-		{echo.GET, "/user/:id", user.GetByID, []echo.MiddlewareFunc{metrics}},
-		{echo.POST, "/user/:id", user.GetByID, nil},
-		{echo.PUT, "/user/:id", user.GetByID, nil},
-		{echo.DELETE, "/user/:id", user.GetByID, nil},
+		{echo.POST, "/generatelink", user.GenerateLink, nil},
 	}
 
 	for _, route := range routes {

@@ -64,26 +64,28 @@ func NewReqeustConfig(params, headers map[string]string, timeout uint16, body []
 }
 
 // HTTPGet returns http response body in []byte, timeout in second
-func HTTPGet(url string, config *RequestConfig) ([]byte, error) {
+func HTTPGet(url string, config *RequestConfig) ([]byte, int, error) {
 	req, err := NewHTTPReqeust("GET", url, config.Params, config.Headers, nil)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	client := http.DefaultClient
 	if config.Client != nil {
 		client = config.Client
 	}
-	client.Timeout = time.Duration(config.Timeout) * time.Second
+
+	if config.Timeout > 0 {
+		client.Timeout = time.Duration(config.Timeout) * time.Second
+	}
 
 	res, err := client.Do(req)
 	if err != nil {
-
-		return nil, err
+		return nil, 0, err
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("resp code is %d", res.StatusCode)
+		return nil, res.StatusCode, fmt.Errorf("resp code is %d", res.StatusCode)
 	}
 
 	b, err := ioutil.ReadAll(res.Body)
@@ -91,10 +93,10 @@ func HTTPGet(url string, config *RequestConfig) ([]byte, error) {
 
 	if err != nil {
 
-		return nil, err
+		return nil, res.StatusCode, err
 	}
 
-	return b, nil
+	return b, res.StatusCode, nil
 }
 
 // HTTPGetFile store body in single file, return file and file's content type
