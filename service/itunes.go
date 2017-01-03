@@ -56,15 +56,25 @@ func (itune *ItunesSV) searchAllCountryByBundleID(bundleID string, country strin
 	var app AppInfo
 	var err error
 
-	app, err = itune.searchByBundleID(bundleID, country)
+	// try cache
+	app, err = itune.getCache(bundleID, country)
 	if err == nil {
 		return app, nil
 	}
 
-	for cty, _ := range countries {
+	app, err = itune.searchByBundleID(bundleID, country)
+	if err == nil {
+		// save cache
+		itune.saveCache(bundleID, country, app)
+		return app, nil
+	}
+
+	for cty := range countries {
 		if cty != country {
 			app, err = itune.searchByBundleID(bundleID, cty)
 			if err == nil {
+				// save cache
+				itune.saveCache(bundleID, country, app)
 				return app, nil
 			}
 		}
@@ -77,11 +87,6 @@ func (itune *ItunesSV) searchByBundleID(bundleID string, country string) (AppInf
 	var url string
 	var app AppInfo
 	var err error
-
-	app, err = itune.getCache(bundleID, country)
-	if err == nil {
-		return app, nil
-	}
 
 	if len(country) == 0 {
 		url = "https://itunes.apple.com/lookup"
@@ -108,7 +113,7 @@ func (itune *ItunesSV) searchByBundleID(bundleID string, country string) (AppInf
 
 	if len(result.Results) > 0 {
 		app = result.Results[0]
-		itune.saveCache(bundleID, country, app)
+		//itune.saveCache(bundleID, country, app)
 		return app, nil
 	}
 
