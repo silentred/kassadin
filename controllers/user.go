@@ -30,6 +30,15 @@ func (e ErrorResp) Error() string {
 	return e.Message
 }
 
+func (e *ErrorResp) Fill(code int, msg string) {
+	e.Code = code
+	e.Message = msg
+}
+
+func newErrResp(code int, msg string) ErrorResp {
+	return ErrorResp{code, msg}
+}
+
 func (u *UserController) GenerateLink(c echo.Context) error {
 	var errResp ErrorResp
 	var queryDTO GenLinkDTO
@@ -39,24 +48,21 @@ func (u *UserController) GenerateLink(c echo.Context) error {
 	queryDTO.OSVersion = c.QueryParam("os_version")
 
 	if len(queryDTO.BundleID) == 0 {
-		errResp.Code = 1
-		errResp.Message = "app is empty"
+		errResp.Fill(1, "app is empty")
 		c.JSON(404, errResp)
 		return errResp
 	}
 
 	token, err := u.userSV.GetPlayTokenByDeviceID(queryDTO.DeviceID)
 	if err != nil {
-		errResp.Code = 1
-		errResp.Message = "player token is empty"
+		errResp.Fill(1, "player token is empty")
 		c.JSON(404, errResp)
 		return errResp
 	}
 
 	urlStr, appID, err := u.itunesSV.GenerateAdLink(queryDTO.BundleID, queryDTO.Country, token)
 	if err != nil {
-		errResp.Code = 1
-		errResp.Message = "url is empty"
+		errResp.Fill(1, "url is empty")
 		c.JSON(404, errResp)
 		return errResp
 	}

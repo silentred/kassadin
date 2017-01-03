@@ -2,7 +2,7 @@ package service
 
 import "gopkg.in/redis.v5"
 import "fmt"
-import "github.com/silentred/template/util"
+
 import "time"
 
 const (
@@ -31,10 +31,11 @@ type UserSV struct {
 }
 
 func NewUserSV(redisCli *redis.Client) *UserSV {
+	initRedisLocker()
 	return &UserSV{redisCli}
 }
 
-// GetByID gets user by its ID
+// GetPlayTokenByDeviceID gets user id (u123) by its device ID
 func (u *UserSV) GetPlayTokenByDeviceID(deviceID string) (string, error) {
 	token, err := u.getPlayToken(deviceID)
 	if err != nil {
@@ -75,8 +76,9 @@ func (u *UserSV) createNewUser(deviceID string) (User, error) {
 	user.DeviceID = deviceID
 	// get lock
 	lockKey := fmt.Sprintf(DeviceLockFormat, deviceID)
-	if util.RedisLock(u.redisCli, lockKey, 3) {
-		defer util.RedisUnlock(u.redisCli, lockKey)
+	// here uses a locker object, which can be mocked to test the result of true and false
+	if redisLocker.Lock(lockKey, 3) {
+		defer redisLocker.Unlock(lockKey)
 		// get new Uid
 		user.ID, err = u.getNewUID()
 		if err != nil {
@@ -89,7 +91,6 @@ func (u *UserSV) createNewUser(deviceID string) (User, error) {
 		u.setDeviceID(user.ShowUid, deviceID)
 		// increate user count
 		u.increaeUserCount()
-
 		return user, nil
 	}
 
