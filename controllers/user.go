@@ -38,8 +38,6 @@ func (u *UserController) GenerateLink(c echo.Context) error {
 	queryDTO.Country = c.QueryParam("country")
 	queryDTO.OSVersion = c.QueryParam("os_version")
 
-	c.Logger().Debug(queryDTO)
-
 	if len(queryDTO.BundleID) == 0 {
 		errResp.Code = 1
 		errResp.Message = "app is empty"

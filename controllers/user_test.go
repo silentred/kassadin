@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/labstack/echo"
-	ulog "github.com/silentred/echo-log"
 	"github.com/silentred/template/service"
 	"github.com/silentred/template/util"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +13,7 @@ import (
 func Test_UserGenerateLink(t *testing.T) {
 	// Setup
 	e := echo.New()
-	e.Logger.SetLevel(ulog.DEBUG)
+	util.InitLogger(e)
 
 	query := map[string]string{
 		"bundleId":    "com.nihao",

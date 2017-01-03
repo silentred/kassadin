@@ -40,29 +40,29 @@ func InitRoutes(e *echo.Echo) {
 		{echo.POST, "/generatelink", user.GenerateLink, nil},
 	}
 
-	for _, route := range routes {
-		// if route.filters == nil {
-		// 	route.filters = []echo.MiddlewareFunc{}
-		// }
+	applyGroupRoutes(v1Group, routes)
+}
 
+func applyGroupRoutes(g *echo.Group, routes []routeInfo) {
+	for _, route := range routes {
 		switch route.method {
 		case echo.GET:
-			v1Group.GET(route.pattern, route.handler, route.filters...)
+			g.GET(route.pattern, route.handler, route.filters...)
 		case echo.POST:
-			v1Group.POST(route.pattern, route.handler, route.filters...)
+			g.POST(route.pattern, route.handler, route.filters...)
 		case echo.PUT:
-			v1Group.PUT(route.pattern, route.handler, route.filters...)
+			g.PUT(route.pattern, route.handler, route.filters...)
 		case echo.DELETE:
-			v1Group.DELETE(route.pattern, route.handler, route.filters...)
+			g.DELETE(route.pattern, route.handler, route.filters...)
 		}
 	}
-
 }
 
 func InitMiddleware(e *echo.Echo) {
-	// use logger middleware
-	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	// use logger middleware
+	middleware.DefaultLoggerConfig.Output = e.Logger.Output()
+	e.Use(middleware.Logger())
 	// session middleware
 	setupSession(e)
 }
