@@ -6,8 +6,10 @@ import (
 
 var redisLocker util.Locker
 
-func initRedisLocker() {
+func GetRedisLocker() util.Locker {
 	if redisLocker == nil {
 		redisLocker = util.NewRedisLocker(RedisClient, 3)
 	}
+
+	return redisLocker
 }

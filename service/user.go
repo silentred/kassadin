@@ -31,7 +31,6 @@ type UserSV struct {
 }
 
 func NewUserSV(redisCli *redis.Client) *UserSV {
-	initRedisLocker()
 	return &UserSV{redisCli}
 }
 
@@ -76,9 +75,10 @@ func (u *UserSV) createNewUser(deviceID string) (User, error) {
 	user.DeviceID = deviceID
 	// get lock
 	lockKey := fmt.Sprintf(DeviceLockFormat, deviceID)
+	locker := GetRedisLocker()
 	// here uses a locker object, which can be mocked to test the result of true and false
-	if redisLocker.Lock(lockKey, 3) {
-		defer redisLocker.Unlock(lockKey)
+	if locker.Lock(lockKey, 3) {
+		defer locker.Unlock(lockKey)
 		// get new Uid
 		user.ID, err = u.getNewUID()
 		if err != nil {

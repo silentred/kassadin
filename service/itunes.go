@@ -25,6 +25,7 @@ var (
 		"DE": "德国",
 		"GB": "英国",
 		"SG": "新加坡",
+		"TG": "多哥",
 	}
 )
 
@@ -56,28 +57,27 @@ func (itune *ItunesSV) searchAllCountryByBundleID(bundleID string, country strin
 	var app AppInfo
 	var err error
 
-	// try cache
-	app, err = itune.getCache(bundleID, country)
-	if err == nil {
-		return app, nil
-	}
+	c := GetMemCache()
+	key := fmt.Sprintf(AppInfoCacheKeyFormat, bundleID, country)
+	ret := util.TryCache(c, key, func() interface{} {
+		app, err = itune.searchByBundleID(bundleID, country)
+		if err == nil {
+			return app
+		}
 
-	app, err = itune.searchByBundleID(bundleID, country)
-	if err == nil {
-		// save cache
-		itune.saveCache(bundleID, country, app)
-		return app, nil
-	}
-
-	for cty := range countries {
-		if cty != country {
-			app, err = itune.searchByBundleID(bundleID, cty)
-			if err == nil {
-				// save cache
-				itune.saveCache(bundleID, country, app)
-				return app, nil
+		for cty := range countries {
+			if cty != country {
+				app, err = itune.searchByBundleID(bundleID, cty)
+				if err == nil {
+					return app
+				}
 			}
 		}
+		return nil
+	})
+
+	if app, ok := ret.(AppInfo); ok && ret != nil {
+		return app, nil
 	}
 
 	return app, fmt.Errorf("cannot find app info by bundleID:%s, country:%s", bundleID, country)
