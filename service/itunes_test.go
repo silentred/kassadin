@@ -72,7 +72,7 @@ func (suite *ItunesTestSuite) SetupTest() {
 }
 
 func (suite *ItunesTestSuite) TestRedis() {
-	sv := ItunesSV{"token", suite.redisCli}
+	sv := ItunesSV{"token"}
 
 	tests := []struct {
 		bundleID string

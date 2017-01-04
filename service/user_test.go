@@ -90,18 +90,21 @@ func (suite *DBTestSuite) testCreatePlayer() {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	err := createPlayer(player)
+	userSV := UserSV{}
+	err := userSV.createPlayer(player)
 	suite.Assert().NoError(err)
 }
 
 func (suite *DBTestSuite) updateDeceasePoints(point int) {
 	// update Points
-	err := updatePlayerPoint("test", "test", point)
+	userSV := UserSV{}
+	point, err := userSV.updatePlayerPoint("test", "test", point)
 	suite.Assert().NoError(err)
+	suite.Assert().Equal(true, point >= 0)
 }
 
 func (suite *DBTestSuite) TestRedis() {
-	userSV := UserSV{redisCli: suite.redisCli}
+	userSV := UserSV{}
 	deviceID := "d123"
 	// token, err := userSV.getPlayToken(deviceID)
 	// suite.Assert().Equal(redis.Nil, err)
