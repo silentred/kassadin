@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"strconv"
+
 	"github.com/labstack/echo"
 	"github.com/silentred/template/service"
 )
@@ -80,8 +82,60 @@ func (u *UserController) GenerateLink(c echo.Context) error {
 	return c.JSON(200, ret)
 }
 
-func (u *UserController) DecreasePoint(ctx echo.Context) error {
+func (u *UserController) GetPoint(ctx echo.Context) error {
+	var deviceID, bundleID string
+	var errResp ErrorResp
+	deviceID = ctx.QueryParam("playerToken")
+	bundleID = ctx.QueryParam("bundleId")
+	if deviceID == "" || bundleID == "" {
+		errResp.Fill(1, "app is empty")
+		ctx.JSON(404, errResp)
+		return errResp
+	}
 
+	res, err := u.userSV.HandleGetPlayerPoint(deviceID, bundleID)
+	ctx.JSON(200, res)
+	return err
+}
+
+func (u *UserController) UsePoint(ctx echo.Context) error {
+	var deviceID, bundleID string
+	var points int
+	var errResp ErrorResp
+	var err error
+
+	deviceID = ctx.QueryParam("playerToken")
+	bundleID = ctx.QueryParam("bundleId")
+	points, err = strconv.Atoi(ctx.QueryParam("points"))
+
+	if deviceID == "" || bundleID == "" {
+		errResp.Fill(1, "app is empty")
+		ctx.JSON(404, errResp)
+		return errResp
+	}
+	if err != nil {
+		points = 0
+	}
+	res, err := u.userSV.HandleUpdatePlayerPoint(deviceID, bundleID, -1*points)
+	ctx.JSON(200, res)
+	return err
+}
+
+func (u *UserController) Log(ctx echo.Context) error {
+	var typeVal int
+	var osVer string
+	var err error
+
+	osVer = ctx.QueryParam("os_version")
+	typeVal, err = strconv.Atoi(ctx.QueryParam("type"))
+	if err != nil {
+		return err
+	}
+	if typeVal == 1 {
+		ctx.Echo().Logger.Errorf("Invalid OSVersion: %s", osVer)
+	}
+
+	return nil
 }
 
 // func (u *UserController) GetByID(c echo.Context) error {

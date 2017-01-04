@@ -25,7 +25,7 @@ type routeInfo struct {
 func InitRoutes(e *echo.Echo) {
 	// initialize controlllers
 	userSV := service.NewUserSV()
-	ituneSV := service.NewItunesSV(service.AdToken, service.RedisClient)
+	ituneSV := service.NewItunesSV(service.AdToken)
 
 	user := controllers.NewUserController(userSV, ituneSV)
 
@@ -38,6 +38,10 @@ func InitRoutes(e *echo.Echo) {
 
 	routes := []routeInfo{
 		{echo.POST, "/generatelink", user.GenerateLink, nil},
+		{echo.POST, "/getpoints", nil, nil},
+		{echo.POST, "/usepoints", nil, nil},
+		{echo.POST, "/log", nil, nil},
+		{echo.POST, "/invalid/version", nil, nil},
 	}
 
 	applyGroupRoutes(v1Group, routes)
@@ -91,16 +95,12 @@ func setupFileSession(e *echo.Echo) error {
 	if err != nil {
 		return err
 	}
-
 	sessionPath := filepath.Join(workDir, "storage", "session")
 	if !util.FileExists(sessionPath) {
 		fmt.Printf("path not exists: %s, use /tmp instead", sessionPath)
 		sessionPath = "/tmp"
 	}
-
 	store := session.NewFileSystemStoreStore(sessionPath, []byte("secret"))
-
 	e.Use(session.Sessions("GSESSION", store))
-
 	return nil
 }

@@ -20,6 +20,8 @@ const (
 // UserService represents the service for user
 type UserService interface {
 	GetPlayTokenByDeviceID(string) (string, error)
+	HandleGetPlayerPoint(deviceID, bundleID string) (util.JSON, error)
+	HandleUpdatePlayerPoint(deviceID, bundleID string, point int) (util.JSON, error)
 }
 
 // User represents user in redis
@@ -167,22 +169,56 @@ func (u *UserSV) getPlayerBy(deviceID, bundleID string) (AffiliatePlayer, error)
 }
 
 // mock
-func (u *UserSV) updatePlayerPoint(deviceID, bundleID string, point int) error {
+func (u *UserSV) updatePlayerPoint(deviceID, bundleID string, point int) (int, error) {
 	orm := GetMysqlORM()
 
 	player, err := u.getPlayerBy(deviceID, bundleID)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if player.Points+point >= 0 {
 		player.Points += point
 		_, err := orm.Update(&player, "points")
 		if err != nil {
-			return err
+			return player.Points, err
 		}
-		return nil
+		return player.Points, nil
 	}
 
-	return fmt.Errorf("player_id %d no enough point: having %d, delta %d", player.ID, player.Points, point)
+	return player.Points, fmt.Errorf("player_id %d no enough point: having %d, delta %d", player.ID, player.Points, point)
+}
+
+func (u *UserSV) HandleGetPlayerPoint(deviceID, bundleID string) (util.JSON, error) {
+	var result = util.JSON{
+		"error_code":  200,
+		"bundleId":    bundleID,
+		"playerToken": deviceID,
+		"points":      0,
+	}
+
+	player, err := u.getPlayerBy(deviceID, bundleID)
+	if err != nil {
+		return result, err
+	}
+	result["points"] = player.Points
+
+	return result, nil
+}
+
+func (u *UserSV) HandleUpdatePlayerPoint(deviceID, bundleID string, point int) (util.JSON, error) {
+	var result = util.JSON{
+		"error_code":  200,
+		"bundleId":    bundleID,
+		"playerToken": deviceID,
+		"points":      0,
+	}
+	resultPoint, err := u.updatePlayerPoint(deviceID, bundleID, point)
+	if err != nil {
+		result["msg"] = err.Error()
+		result["error_code"] = 404
+		return result, err
+	}
+	result["points"] = resultPoint
+	return result, nil
 }
