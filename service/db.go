@@ -65,23 +65,40 @@ func InitDBInfo() {
 }
 
 func InitMysqlORM(myInfo MysqlInfo) orm.Ormer {
-	orm.RegisterDriver("mysql", orm.DRMySQL)
-	orm.RegisterDataBase("default", "mysql", myInfo.String())
-	orm.RegisterModel(new(User))
+	if MysqlORM == nil {
+		orm.RegisterDriver("mysql", orm.DRMySQL)
+		orm.RegisterDataBase("default", "mysql", myInfo.String())
+		// register model
+		orm.RegisterModel(new(AffiliatePlayer))
 
-	MysqlORM = orm.NewOrm()
-
+		MysqlORM = orm.NewOrm()
+	}
 	return MysqlORM
 }
 
 func InitRedisClient(redisInfo RedisInfo) *redis.Client {
-	addr := fmt.Sprintf("%s:%d", redisInfo.Host, redisInfo.Port)
-	client := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		DB:       redisInfo.Database,
-		Password: "", // no password set
-	})
+	if RedisClient == nil {
+		addr := fmt.Sprintf("%s:%d", redisInfo.Host, redisInfo.Port)
+		client := redis.NewClient(&redis.Options{
+			Addr:     addr,
+			DB:       redisInfo.Database,
+			Password: "", // no password set
+		})
+		RedisClient = client
+	}
+	return RedisClient
+}
 
-	RedisClient = client
-	return client
+func GetMysqlORM() orm.Ormer {
+	if MysqlORM == nil {
+		panic("MysqlORM is not initialized")
+	}
+	return MysqlORM
+}
+
+func GetRedisClient() *redis.Client {
+	if RedisClient == nil {
+		panic("RedisClient is not initialized")
+	}
+	return RedisClient
 }

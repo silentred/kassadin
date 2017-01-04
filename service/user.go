@@ -1,9 +1,13 @@
 package service
 
-import "gopkg.in/redis.v5"
-import "fmt"
+import (
+	"fmt"
+	"time"
 
-import "time"
+	"github.com/astaxie/beego/orm"
+	"github.com/silentred/template/util"
+	"gopkg.in/redis.v5"
+)
 
 const (
 	DeviceIDToPlayerToken = "fame:affiliate:device_id:player_token"
@@ -27,11 +31,10 @@ type User struct {
 
 // UserSV is the implimentation of UserService
 type UserSV struct {
-	redisCli *redis.Client
 }
 
-func NewUserSV(redisCli *redis.Client) *UserSV {
-	return &UserSV{redisCli}
+func NewUserSV() *UserSV {
+	return &UserSV{}
 }
 
 // GetPlayTokenByDeviceID gets user id (u123) by its device ID
@@ -49,24 +52,34 @@ func (u *UserSV) GetPlayTokenByDeviceID(deviceID string) (string, error) {
 	return token, nil
 }
 
+// mock
+func (u *UserSV) getLocker() util.Locker {
+	return GetRedisLocker()
+}
+
+// mock
 func (u *UserSV) getPlayToken(deviceID string) (string, error) {
-	return u.redisCli.HGet(DeviceIDToPlayerToken, deviceID).Result()
+	return GetRedisClient().HGet(DeviceIDToPlayerToken, deviceID).Result()
 }
 
+// mock
 func (u *UserSV) getNewUID() (int64, error) {
-	return u.redisCli.IncrBy(UidIncrease, 1).Result()
+	return GetRedisClient().IncrBy(UidIncrease, 1).Result()
 }
 
+// mock
 func (u *UserSV) setDeviceID(playerToken, deviceID string) error {
-	return u.redisCli.HSet(PlayerTokenToDeviceID, playerToken, deviceID).Err()
+	return GetRedisClient().HSet(PlayerTokenToDeviceID, playerToken, deviceID).Err()
 }
 
+// mock
 func (u *UserSV) setPlayToken(deviceID, playerToken string) error {
-	return u.redisCli.HSet(DeviceIDToPlayerToken, deviceID, playerToken).Err()
+	return GetRedisClient().HSet(DeviceIDToPlayerToken, deviceID, playerToken).Err()
 }
 
+// mock
 func (u *UserSV) increaeUserCount() error {
-	return u.redisCli.Incr(UserCount).Err()
+	return GetRedisClient().Incr(UserCount).Err()
 }
 
 func (u *UserSV) createNewUser(deviceID string) (User, error) {
@@ -75,7 +88,7 @@ func (u *UserSV) createNewUser(deviceID string) (User, error) {
 	user.DeviceID = deviceID
 	// get lock
 	lockKey := fmt.Sprintf(DeviceLockFormat, deviceID)
-	locker := GetRedisLocker()
+	locker := u.getLocker()
 	// here uses a locker object, which can be mocked to test the result of true and false
 	if locker.Lock(lockKey, 3) {
 		defer locker.Unlock(lockKey)
@@ -107,4 +120,69 @@ func (u *UserSV) createNewUser(deviceID string) (User, error) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	return user, fmt.Errorf("cannot get playToken by device")
+}
+
+type AffiliatePlayer struct {
+	ID        int64     `orm:"column(id);pk"`
+	DeviceID  string    `orm:"column(token)"`
+	BundleID  string    `orm:"column(app_id)"`
+	Points    int       `orm:"column(points)"`
+	SDKVer    string    `orm:"column(sdk_version)"`
+	ClientID  string    `orm:"column(client_id)"`
+	CreatedAt time.Time `orm:"column(created_at);type(timestamp)"`
+	UpdatedAt time.Time `orm:"column(updated_at);type(timestamp)"`
+}
+
+func (player *AffiliatePlayer) TableName() string {
+	return "affi_player"
+}
+
+// mock
+func (u *UserSV) createPlayer(player AffiliatePlayer) error {
+	orm := GetMysqlORM()
+	_, err := orm.Insert(&player)
+	return err
+}
+
+// mock
+func (u *UserSV) getPlayerBy(deviceID, bundleID string) (AffiliatePlayer, error) {
+	var player AffiliatePlayer
+
+	qb, err := orm.NewQueryBuilder("mysql")
+	if err != nil {
+		util.Logger.Error(err)
+	}
+	qb.Select("id", "points").From("affi_player").Where("token = ?").And("app_id = ?").Limit(1)
+	sql := qb.String()
+	util.Logger.Debug(sql)
+
+	orm := GetMysqlORM()
+	err = orm.Raw(sql, deviceID, bundleID).QueryRow(&player)
+
+	if err != nil {
+		return player, err
+	}
+
+	return player, nil
+}
+
+// mock
+func (u *UserSV) updatePlayerPoint(deviceID, bundleID string, point int) error {
+	orm := GetMysqlORM()
+
+	player, err := u.getPlayerBy(deviceID, bundleID)
+	if err != nil {
+		return err
+	}
+
+	if player.Points+point >= 0 {
+		player.Points += point
+		_, err := orm.Update(&player, "points")
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return fmt.Errorf("player_id %d no enough point: having %d, delta %d", player.ID, player.Points, point)
 }

@@ -39,6 +39,7 @@ func newErrResp(code int, msg string) ErrorResp {
 	return ErrorResp{code, msg}
 }
 
+// GenerateLink for user
 func (u *UserController) GenerateLink(c echo.Context) error {
 	var errResp ErrorResp
 	var queryDTO GenLinkDTO
@@ -77,6 +78,10 @@ func (u *UserController) GenerateLink(c echo.Context) error {
 	}
 
 	return c.JSON(200, ret)
+}
+
+func (u *UserController) DecreasePoint(ctx echo.Context) error {
+
 }
 
 // func (u *UserController) GetByID(c echo.Context) error {

@@ -18,7 +18,7 @@ func init() {
 
 func main() {
 	service.InitDBInfo()
-	//service.InitMysqlORM(service.MysqlConfig)
+	service.InitMysqlORM(service.MysqlConfig)
 	service.InitRedisClient(service.RedisConfig)
 
 	router.InitRoutes(Echo)

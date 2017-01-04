@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-
-	redis "gopkg.in/redis.v5"
 )
 
 import "github.com/silentred/template/util"
@@ -40,8 +38,7 @@ type ItunesService interface {
 }
 
 type ItunesSV struct {
-	token    string
-	redisCli *redis.Client
+	token string
 }
 
 type AppInfo struct {
@@ -49,8 +46,8 @@ type AppInfo struct {
 	TrackViewUrl string `json:"trackViewUrl"`
 }
 
-func NewItunesSV(token string, cli *redis.Client) *ItunesSV {
-	return &ItunesSV{token, cli}
+func NewItunesSV(token string) *ItunesSV {
+	return &ItunesSV{token}
 }
 
 func (itune *ItunesSV) searchAllCountryByBundleID(bundleID string, country string) (AppInfo, error) {
@@ -118,45 +115,6 @@ func (itune *ItunesSV) searchByBundleID(bundleID string, country string) (AppInf
 	}
 
 	return app, fmt.Errorf("no results got from itunus api query: %v", query)
-}
-
-func (itune *ItunesSV) saveCache(bundleID string, country string, app AppInfo) error {
-	var err error
-	key := fmt.Sprintf(AppInfoCacheKeyFormat, bundleID, country)
-	res, err := json.Marshal(app)
-	if err != nil {
-		return err
-	}
-
-	if itune.redisCli != nil {
-		err = itune.redisCli.Set(key, util.String(res), 0).Err()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (itune *ItunesSV) getCache(bundleID string, country string) (AppInfo, error) {
-	var app AppInfo
-
-	if itune.redisCli != nil {
-		key := fmt.Sprintf(AppInfoCacheKeyFormat, bundleID, country)
-		res, err := itune.redisCli.Get(key).Result()
-		if err != nil {
-			return app, err
-		}
-
-		err = json.Unmarshal(util.Slice(res), &app)
-		if err != nil {
-			return app, err
-		}
-
-		return app, nil
-	}
-
-	return app, fmt.Errorf("miss cache %s, %s", bundleID, country)
 }
 
 func (itune *ItunesSV) GenerateAdLink(bundleID, country, showUID string) (string, int64, error) {

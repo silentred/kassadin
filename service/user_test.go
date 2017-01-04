@@ -5,9 +5,11 @@ import (
 
 	redis "gopkg.in/redis.v5"
 
-	"fmt"
+	"time"
 
 	"github.com/astaxie/beego/orm"
+	"github.com/labstack/echo"
+	"github.com/silentred/template/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -35,6 +37,8 @@ func testUserMock(t *testing.T) {
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func Test_DBSuite(t *testing.T) {
+	e := echo.New()
+	util.InitLogger(e)
 	suite.Run(t, new(DBTestSuite))
 }
 
@@ -48,16 +52,16 @@ type DBTestSuite struct {
 
 // SetupTest runs before each test
 func (suite *DBTestSuite) SetupTest() {
-	// if suite.ormer == nil {
-	// 	mysqlInfo := MysqlInfo{
-	// 		Host:     "127.0.0.1",
-	// 		Port:     3306,
-	// 		User:     "jason",
-	// 		Password: "jason",
-	// 		Database: "fenda",
-	// 	}
-	// 	suite.ormer = InitMysqlORM(mysqlInfo)
-	// }
+	if suite.ormer == nil {
+		mysqlInfo := MysqlInfo{
+			Host:     "127.0.0.1",
+			Port:     3306,
+			User:     "jason",
+			Password: "jason",
+			Database: "fenda",
+		}
+		suite.ormer = InitMysqlORM(mysqlInfo)
+	}
 
 	if suite.redisCli == nil {
 		redisInfo := RedisInfo{
@@ -70,11 +74,31 @@ func (suite *DBTestSuite) SetupTest() {
 }
 
 // All methods that begin with "Test" are run as tests within a suite.
-// func (suite *DBTestSuite) TestMysql() {
-// 	usv := UserSV{suite.ormer}
-// 	user := usv.GetByID(10010026)
-// 	suite.Equal(true, len(user.Username) > 0)
-// }
+func (suite *DBTestSuite) TestMysql() {
+	suite.updateDeceasePoints(20)
+	suite.updateDeceasePoints(-10)
+}
+
+// tested
+func (suite *DBTestSuite) testCreatePlayer() {
+	// insert player
+	player := AffiliatePlayer{
+		DeviceID:  "test",
+		BundleID:  "test",
+		Points:    123,
+		SDKVer:    "test",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	err := createPlayer(player)
+	suite.Assert().NoError(err)
+}
+
+func (suite *DBTestSuite) updateDeceasePoints(point int) {
+	// update Points
+	err := updatePlayerPoint("test", "test", point)
+	suite.Assert().NoError(err)
+}
 
 func (suite *DBTestSuite) TestRedis() {
 	userSV := UserSV{redisCli: suite.redisCli}
@@ -86,5 +110,4 @@ func (suite *DBTestSuite) TestRedis() {
 	token, err := userSV.GetPlayTokenByDeviceID(deviceID)
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(true, len(token) > 0)
-	fmt.Println(token)
 }

@@ -30,15 +30,21 @@ func InitLogger(e *echo.Echo) {
 		if err != nil {
 			panic(err)
 		}
-		setFileRotatorWriter(e, path, appName, limitSize)
+		if e != nil {
+			setFileRotatorWriter(e, path, appName, limitSize)
+		}
+	} else {
+		Logger = e.Logger
 	}
 
-	switch mode {
-	case "dev":
-		e.Logger.SetLevel(log.DEBUG)
-	case "prod":
-		e.Logger.SetLevel(log.INFO)
-	default:
-		e.Logger.SetLevel(log.DEBUG)
+	if e != nil {
+		switch mode {
+		case "dev":
+			e.Logger.SetLevel(log.DEBUG)
+		case "prod":
+			e.Logger.SetLevel(log.INFO)
+		default:
+			e.Logger.SetLevel(log.DEBUG)
+		}
 	}
 }

@@ -24,7 +24,7 @@ type routeInfo struct {
 
 func InitRoutes(e *echo.Echo) {
 	// initialize controlllers
-	userSV := service.NewUserSV(service.RedisClient)
+	userSV := service.NewUserSV()
 	ituneSV := service.NewItunesSV(service.AdToken, service.RedisClient)
 
 	user := controllers.NewUserController(userSV, ituneSV)
