@@ -38,10 +38,9 @@ func InitRoutes(e *echo.Echo) {
 
 	routes := []routeInfo{
 		{echo.POST, "/generatelink", user.GenerateLink, nil},
-		{echo.POST, "/getpoints", nil, nil},
-		{echo.POST, "/usepoints", nil, nil},
-		{echo.POST, "/log", nil, nil},
-		{echo.POST, "/invalid/version", nil, nil},
+		{echo.POST, "/getpoints", user.GetPoint, nil},
+		{echo.POST, "/usepoints", user.UsePoint, nil},
+		{echo.POST, "/log", user.Log, nil},
 	}
 
 	applyGroupRoutes(v1Group, routes)
@@ -65,8 +64,8 @@ func applyGroupRoutes(g *echo.Group, routes []routeInfo) {
 func InitMiddleware(e *echo.Echo) {
 	e.Use(middleware.Recover())
 	// use logger middleware
-	middleware.DefaultLoggerConfig.Output = e.Logger.Output()
-	e.Use(middleware.Logger())
+	// middleware.DefaultLoggerConfig.Output = e.Logger.Output()
+	// e.Use(middleware.Logger())
 	// session middleware
 	setupSession(e)
 }

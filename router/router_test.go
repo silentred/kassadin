@@ -15,9 +15,12 @@ func TestRoutes(t *testing.T) {
 		result bool
 	}{
 		{echo.POST, "/promotion/generatelink", false},
+		{echo.POST, "/promotion/getpoints", false},
+		{echo.POST, "/promotion/usepoints", false},
+		{echo.POST, "/promotion/log", false},
 	}
 
-	viper.Set("app.sessionEnable", true)
+	viper.Set("app.sessionEnable", false)
 	viper.Set("app.sessionProvider", "file")
 
 	e := echo.New()

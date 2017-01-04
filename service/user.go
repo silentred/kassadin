@@ -158,10 +158,12 @@ func (u *UserSV) getPlayerBy(deviceID, bundleID string) (AffiliatePlayer, error)
 	sql := qb.String()
 	util.Logger.Debug(sql)
 
-	orm := GetMysqlORM()
-	err = orm.Raw(sql, deviceID, bundleID).QueryRow(&player)
-
+	o := GetMysqlORM()
+	err = o.Raw(sql, deviceID, bundleID).QueryRow(&player)
 	if err != nil {
+		if err == orm.ErrNoRows {
+			// no need to create new player
+		}
 		return player, err
 	}
 

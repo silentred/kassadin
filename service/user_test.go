@@ -75,8 +75,9 @@ func (suite *DBTestSuite) SetupTest() {
 
 // All methods that begin with "Test" are run as tests within a suite.
 func (suite *DBTestSuite) TestMysql() {
-	suite.updateDeceasePoints(20)
-	suite.updateDeceasePoints(-10)
+	// suite.updateDeceasePoints(20)
+	// suite.updateDeceasePoints(-10)
+	suite.testGetPlayer()
 }
 
 // tested
@@ -93,6 +94,12 @@ func (suite *DBTestSuite) testCreatePlayer() {
 	userSV := UserSV{}
 	err := userSV.createPlayer(player)
 	suite.Assert().NoError(err)
+}
+
+func (suite *DBTestSuite) testGetPlayer() {
+	userSV := UserSV{}
+	player, err := userSV.getPlayerBy("sdf", "sdf")
+	suite.Assert().Error(err, player)
 }
 
 func (suite *DBTestSuite) updateDeceasePoints(point int) {

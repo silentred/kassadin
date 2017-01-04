@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/silentred/template/service"
+	"github.com/silentred/template/util"
 )
 
 type UserController struct {
@@ -108,7 +109,7 @@ func (u *UserController) UsePoint(ctx echo.Context) error {
 	bundleID = ctx.QueryParam("bundleId")
 	points, err = strconv.Atoi(ctx.QueryParam("points"))
 
-	if deviceID == "" || bundleID == "" {
+	if deviceID == "" || bundleID == "" || points <= 0 {
 		errResp.Fill(1, "app is empty")
 		ctx.JSON(404, errResp)
 		return errResp
@@ -133,6 +134,7 @@ func (u *UserController) Log(ctx echo.Context) error {
 	}
 	if typeVal == 1 {
 		ctx.Echo().Logger.Errorf("Invalid OSVersion: %s", osVer)
+		ctx.JSON(200, util.JSON{"error_code": 200})
 	}
 
 	return nil

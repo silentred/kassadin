@@ -90,5 +90,4 @@ func (suite *ItunesTestSuite) TestRedis() {
 		suite.Assert().NoError(err)
 		suite.Assert().Equal(true, len(app.TrackViewUrl) > 0)
 	}
-
 }
