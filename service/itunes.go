@@ -150,6 +150,7 @@ func (itune *ItunesSV) GenerateAdLink(bundleID, country, showUID string) (string
 		"uo":     "4",
 		"ct":     ct,
 		"app_id": appID,
+		"at":     AdToken,
 	}
 	query := urlObj.Query()
 	for key, val := range appendQuery {
