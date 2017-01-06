@@ -6,6 +6,7 @@ sessionProvider = "file"
 logProvider = "file"
 logRotate = true
 logLimit = "100MB"
+latencyEnable=true
 
 [mysql]
 host="localhost"

@@ -69,10 +69,17 @@ func applyGroupRoutes(g *echo.Group, routes []routeInfo) {
 func InitMiddleware(e *echo.Echo) {
 	e.Use(middleware.Recover())
 	// use logger middleware
-	// middleware.DefaultLoggerConfig.Output = e.Logger.Output()
-	// e.Use(middleware.Logger())
+	setupLatencyLog(e)
 	// session middleware
 	setupSession(e)
+}
+
+func setupLatencyLog(e *echo.Echo) {
+	enable := viper.GetBool("app.latencyEnable")
+	if enable {
+		middleware.DefaultLoggerConfig.Output = e.Logger.Output()
+		e.Use(middleware.Logger())
+	}
 }
 
 func setupSession(e *echo.Echo) {
