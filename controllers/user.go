@@ -3,6 +3,8 @@ package controllers
 import (
 	"strconv"
 
+	"fmt"
+
 	"github.com/labstack/echo"
 	"github.com/silentred/template/service"
 	"github.com/silentred/template/util"
@@ -59,16 +61,18 @@ func (u *UserController) GenerateLink(c echo.Context) error {
 
 	token, err := u.userSV.GetPlayTokenByDeviceID(queryDTO.DeviceID)
 	if err != nil {
+		c.Logger().Debug(err)
 		errResp.Fill(1, "player token is empty")
 		c.JSON(404, errResp)
-		return errResp
+		return err
 	}
 
 	urlStr, appID, err := u.itunesSV.GenerateAdLink(queryDTO.BundleID, queryDTO.Country, token)
 	if err != nil {
+		c.Logger().Debug(err)
 		errResp.Fill(1, "url is empty")
 		c.JSON(404, errResp)
-		return errResp
+		return err
 	}
 
 	ret := map[string]interface{}{
@@ -80,6 +84,7 @@ func (u *UserController) GenerateLink(c echo.Context) error {
 		"invalid_os_version": 0,
 	}
 
+	c.Logger().Info(fmt.Sprintf("app_id:%d bundleID:%s deviceID:%s os_version:%s country:%s", appID, queryDTO.BundleID, queryDTO.DeviceID, queryDTO.OSVersion, queryDTO.Country))
 	return c.JSON(200, ret)
 }
 

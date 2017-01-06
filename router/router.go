@@ -44,6 +44,11 @@ func InitRoutes(e *echo.Echo) {
 	}
 
 	applyGroupRoutes(v1Group, routes)
+
+	e.GET("/ping", func(c echo.Context) error {
+		c.String(200, "")
+		return nil
+	})
 }
 
 func applyGroupRoutes(g *echo.Group, routes []routeInfo) {
