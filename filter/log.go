@@ -1,7 +1,6 @@
 package filter
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/labstack/echo"
@@ -21,13 +20,25 @@ var (
 	}, []string{"service"})
 )
 
-func init() {
+// func init() {
+// 	prometheus.MustRegister(reqCount)
+// 	prometheus.MustRegister(reqDuration)
+
+// 	// Expose the registered metrics via HTTP.
+// 	http.Handle("/metrics", promhttp.Handler())
+// 	go http.ListenAndServe(":8088", nil)
+// }
+
+func GetPrometheusLogHandler() echo.HandlerFunc {
 	prometheus.MustRegister(reqCount)
 	prometheus.MustRegister(reqDuration)
 
-	// Expose the registered metrics via HTTP.
-	http.Handle("/metrics", promhttp.Handler())
-	go http.ListenAndServe(":8088", nil)
+	handler := func(e echo.Context) error {
+		promhttp.Handler().ServeHTTP(e.Response().Writer, e.Request())
+		return nil
+	}
+
+	return handler
 }
 
 func Metrics() echo.MiddlewareFunc {

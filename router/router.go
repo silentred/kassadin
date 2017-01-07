@@ -44,6 +44,7 @@ func InitRoutes(e *echo.Echo) {
 	}
 
 	applyGroupRoutes(v1Group, routes)
+	setupPromLogHandler(e)
 
 	e.GET("/ping", func(c echo.Context) error {
 		c.String(200, "")
@@ -72,6 +73,11 @@ func InitMiddleware(e *echo.Echo) {
 	setupLatencyLog(e)
 	// session middleware
 	setupSession(e)
+}
+
+func setupPromLogHandler(e *echo.Echo) {
+	handler := filter.GetPrometheusLogHandler()
+	e.GET("/metrics", handler)
 }
 
 func setupLatencyLog(e *echo.Echo) {

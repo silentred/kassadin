@@ -99,7 +99,7 @@ func (suite *DBTestSuite) testCreatePlayer() {
 func (suite *DBTestSuite) testGetPlayer() {
 	userSV := UserSV{}
 	player, err := userSV.getPlayerBy("sdf", "sdf")
-	suite.Assert().Error(err, player)
+	suite.Assert().Error(err, player.BundleID)
 }
 
 func (suite *DBTestSuite) updateDeceasePoints(point int) {
