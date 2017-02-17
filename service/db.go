@@ -26,16 +26,16 @@ type RedisInfo struct {
 	Host     string
 	Port     int
 	Database int
+	Password string
 	Tags     []string
 }
 
 var (
-	MysqlConfig MysqlInfo
-	RedisConfig RedisInfo
-	// mysql ORM
-	MysqlORM orm.Ormer
-	// redis client
-	RedisClient *redis.Client
+	mysqlConfig MysqlInfo
+	redisConfig RedisInfo
+
+	mysqlORM    orm.Ormer
+	redisClient *redis.Client
 )
 
 func InitDBInfo() {
@@ -45,7 +45,7 @@ func InitDBInfo() {
 	mysqlPwd := viper.GetString("mysql.password")
 	mysqlDB := viper.GetString("mysql.db")
 
-	MysqlConfig = MysqlInfo{
+	mysqlConfig = MysqlInfo{
 		Host:     mysqlHost,
 		Port:     mysqlPort,
 		User:     mysqlUser,
@@ -56,49 +56,36 @@ func InitDBInfo() {
 	redisHost := viper.GetString("redis.host")
 	redisPort := viper.GetInt("redis.port")
 	redisDB := viper.GetInt("redis.db")
+	redisPwd := viper.GetString("redis.password")
 
-	RedisConfig = RedisInfo{
+	redisConfig = RedisInfo{
 		Host:     redisHost,
 		Port:     redisPort,
 		Database: redisDB,
+		Password: redisPwd,
 	}
 }
 
-func InitMysqlORM(myInfo MysqlInfo) orm.Ormer {
-	if MysqlORM == nil {
-		orm.RegisterDriver("mysql", orm.DRMySQL)
-		orm.RegisterDataBase("default", "mysql", myInfo.String())
-		// register model
-		orm.RegisterModel(new(AffiliatePlayer))
+func initMysqlORM(myInfo MysqlInfo) orm.Ormer {
+	orm.RegisterDriver("mysql", orm.DRMySQL)
+	orm.RegisterDataBase("default", "mysql", myInfo.String())
+	// register model
+	orm.RegisterModel(new(AffiliatePlayer))
 
-		MysqlORM = orm.NewOrm()
-	}
-	return MysqlORM
+	mysqlORM = orm.NewOrm()
+	return mysqlORM
 }
 
-func InitRedisClient(redisInfo RedisInfo) *redis.Client {
-	if RedisClient == nil {
-		addr := fmt.Sprintf("%s:%d", redisInfo.Host, redisInfo.Port)
-		client := redis.NewClient(&redis.Options{
-			Addr:     addr,
-			DB:       redisInfo.Database,
-			Password: "", // no password set
-		})
-		RedisClient = client
+func initRedisClient(redisInfo RedisInfo) *redis.Client {
+	addr := fmt.Sprintf("%s:%d", redisInfo.Host, redisInfo.Port)
+	client := redis.NewClient(&redis.Options{
+		Addr:     addr,
+		DB:       redisInfo.Database,
+		Password: redisInfo.Password, // no password set
+	})
+	if err := client.Ping().Err(); err != nil {
+		panic(err)
 	}
-	return RedisClient
-}
-
-func GetMysqlORM() orm.Ormer {
-	if MysqlORM == nil {
-		panic("MysqlORM is not initialized")
-	}
-	return MysqlORM
-}
-
-func GetRedisClient() *redis.Client {
-	if RedisClient == nil {
-		panic("RedisClient is not initialized")
-	}
-	return RedisClient
+	redisClient = client
+	return client
 }

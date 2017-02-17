@@ -5,18 +5,20 @@ import (
 
 	"fmt"
 
-	"github.com/labstack/echo"
 	"github.com/silentred/template/service"
 	"github.com/silentred/template/util"
+	"github.com/labstack/echo"
 )
 
 type UserController struct {
-	userSV   service.UserService
-	itunesSV service.ItunesService
+	UserSV   service.UserService   `inject`
+	ItunesSV service.ItunesService `inject`
 }
 
-func NewUserController(sv service.UserService, itune service.ItunesService) *UserController {
-	return &UserController{sv, itune}
+func NewUserController() *UserController {
+	u := &UserController{}
+	service.Injector.Apply(u)
+	return u
 }
 
 type GenLinkDTO struct {
@@ -29,6 +31,7 @@ type GenLinkDTO struct {
 type ErrorResp struct {
 	Code    int    `json:"errcode"`
 	Message string `json:"message"`
+	ReqID   string `json:"req_id"`
 }
 
 func (e ErrorResp) Error() string {
@@ -41,17 +44,19 @@ func (e *ErrorResp) Fill(code int, msg string) {
 }
 
 func newErrResp(code int, msg string) ErrorResp {
-	return ErrorResp{code, msg}
+	return ErrorResp{code, msg, ""}
 }
 
 // GenerateLink for user
 func (u *UserController) GenerateLink(c echo.Context) error {
 	var errResp ErrorResp
 	var queryDTO GenLinkDTO
-	queryDTO.BundleID = c.QueryParam("bundleId")
-	queryDTO.DeviceID = c.QueryParam("playerToken")
-	queryDTO.Country = c.QueryParam("country")
-	queryDTO.OSVersion = c.QueryParam("os_version")
+	errResp.ReqID = c.Request().Header.Get("X-Request-ID")
+
+	queryDTO.BundleID = c.FormValue("bundleId")
+	queryDTO.DeviceID = c.FormValue("playerToken")
+	queryDTO.Country = c.FormValue("country")
+	queryDTO.OSVersion = c.FormValue("os_version")
 
 	if len(queryDTO.BundleID) == 0 {
 		errResp.Fill(1, "app is empty")
@@ -59,7 +64,7 @@ func (u *UserController) GenerateLink(c echo.Context) error {
 		return errResp
 	}
 
-	token, err := u.userSV.GetPlayTokenByDeviceID(queryDTO.DeviceID)
+	token, err := u.UserSV.GetPlayTokenByDeviceID(queryDTO.DeviceID)
 	if err != nil {
 		c.Logger().Debug(err)
 		errResp.Fill(1, "player token is empty")
@@ -67,7 +72,7 @@ func (u *UserController) GenerateLink(c echo.Context) error {
 		return err
 	}
 
-	urlStr, appID, err := u.itunesSV.GenerateAdLink(queryDTO.BundleID, queryDTO.Country, token)
+	urlStr, appID, err := u.ItunesSV.GenerateAdLink(queryDTO.BundleID, queryDTO.Country, token)
 	if err != nil {
 		c.Logger().Debug(err)
 		errResp.Fill(1, "url is empty")
@@ -84,22 +89,24 @@ func (u *UserController) GenerateLink(c echo.Context) error {
 		"invalid_os_version": 0,
 	}
 
-	c.Logger().Info(fmt.Sprintf("app_id:%d bundleID:%s deviceID:%s os_version:%s country:%s", appID, queryDTO.BundleID, queryDTO.DeviceID, queryDTO.OSVersion, queryDTO.Country))
+	c.Logger().Info(fmt.Sprintf("reqID:%s app_id:%d bundleID:%s deviceID:%s os_version:%s country:%s retURL:%s", errResp.ReqID, appID, queryDTO.BundleID, queryDTO.DeviceID, queryDTO.OSVersion, queryDTO.Country, urlStr))
 	return c.JSON(200, ret)
 }
 
 func (u *UserController) GetPoint(ctx echo.Context) error {
 	var deviceID, bundleID string
 	var errResp ErrorResp
-	deviceID = ctx.QueryParam("playerToken")
-	bundleID = ctx.QueryParam("bundleId")
+
+	errResp.ReqID = ctx.Request().Header.Get("X-Request-ID")
+	deviceID = ctx.FormValue("playerToken")
+	bundleID = ctx.FormValue("bundleId")
 	if deviceID == "" || bundleID == "" {
 		errResp.Fill(1, "app is empty")
 		ctx.JSON(404, errResp)
 		return errResp
 	}
 
-	res, err := u.userSV.HandleGetPlayerPoint(deviceID, bundleID)
+	res, err := u.UserSV.HandleGetPlayerPoint(deviceID, bundleID)
 	ctx.JSON(200, res)
 	return err
 }
@@ -110,9 +117,10 @@ func (u *UserController) UsePoint(ctx echo.Context) error {
 	var errResp ErrorResp
 	var err error
 
-	deviceID = ctx.QueryParam("playerToken")
-	bundleID = ctx.QueryParam("bundleId")
-	points, err = strconv.Atoi(ctx.QueryParam("points"))
+	errResp.ReqID = ctx.Request().Header.Get("X-Request-ID")
+	deviceID = ctx.FormValue("playerToken")
+	bundleID = ctx.FormValue("bundleId")
+	points, err = strconv.Atoi(ctx.FormValue("points"))
 
 	if deviceID == "" || bundleID == "" || points <= 0 {
 		errResp.Fill(1, "app is empty")
@@ -122,7 +130,7 @@ func (u *UserController) UsePoint(ctx echo.Context) error {
 	if err != nil {
 		points = 0
 	}
-	res, err := u.userSV.HandleUpdatePlayerPoint(deviceID, bundleID, -1*points)
+	res, err := u.UserSV.HandleUpdatePlayerPoint(deviceID, bundleID, -1*points)
 	ctx.JSON(200, res)
 	return err
 }
@@ -132,13 +140,14 @@ func (u *UserController) Log(ctx echo.Context) error {
 	var osVer string
 	var err error
 
-	osVer = ctx.QueryParam("os_version")
-	typeVal, err = strconv.Atoi(ctx.QueryParam("type"))
+	reqID := ctx.Request().Header.Get("X-Request-ID")
+	osVer = ctx.FormValue("os_version")
+	typeVal, err = strconv.Atoi(ctx.FormValue("type"))
 	if err != nil {
 		return err
 	}
 	if typeVal == 1 {
-		ctx.Echo().Logger.Errorf("Invalid OSVersion: %s", osVer)
+		ctx.Logger().Errorf("Invalid OSVersion: %s ReqID: %s", osVer, reqID)
 		ctx.JSON(200, util.JSON{"error_code": 200})
 	}
 

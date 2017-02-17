@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
+
+	"github.com/silentred/template/util"
 )
-
-import "github.com/silentred/template/util"
-
-import "strings"
 
 var (
 	countries = map[string]string{
@@ -38,7 +37,8 @@ type ItunesService interface {
 }
 
 type ItunesSV struct {
-	token string
+	token    string
+	MemCache util.Cache `inject`
 }
 
 type AppInfo struct {
@@ -47,16 +47,18 @@ type AppInfo struct {
 }
 
 func NewItunesSV(token string) *ItunesSV {
-	return &ItunesSV{token}
+	sv := &ItunesSV{token, nil}
+	Injector.Apply(sv)
+
+	return sv
 }
 
 func (itune *ItunesSV) searchAllCountryByBundleID(bundleID string, country string) (AppInfo, error) {
 	var app AppInfo
 	var err error
 
-	c := GetMemCache()
 	key := fmt.Sprintf(AppInfoCacheKeyFormat, bundleID, country)
-	ret := util.TryCache(c, key, func() interface{} {
+	ret := util.TryCache(itune.MemCache, key, func() interface{} {
 		app, err = itune.searchByBundleID(bundleID, country)
 		if err == nil {
 			return app

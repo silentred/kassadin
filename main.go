@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/labstack/echo"
 	"github.com/silentred/template/router"
 	"github.com/silentred/template/service"
 	"github.com/silentred/template/util"
+	"github.com/labstack/echo"
 )
 
 // Echo is the web engine
@@ -18,8 +18,8 @@ func init() {
 
 func main() {
 	service.InitDBInfo()
-	service.InitMysqlORM(service.MysqlConfig)
-	service.InitRedisClient(service.RedisConfig)
+	service.InitDBs()
+	service.InitServices()
 
 	router.InitRoutes(Echo)
 	router.InitMiddleware(Echo)

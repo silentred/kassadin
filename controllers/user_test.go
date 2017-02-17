@@ -4,9 +4,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/labstack/echo"
 	"github.com/silentred/template/service"
 	"github.com/silentred/template/util"
+	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,11 +46,13 @@ func Test_UserGenerateLink(t *testing.T) {
 
 			mockUserService := &service.UserMockSV{}
 			mockUserService.On("GetPlayTokenByDeviceID", "d123").Return("u123", nil)
+			service.Injector.MapTo(mockUserService, new(service.UserService))
 
 			mockItuneSV := &service.ItunesMockSV{}
 			mockItuneSV.On("GenerateAdLink", "com.nihao", "cn", "u123").Return("http://sdf/id1233?at=123", int64(1233), nil)
+			service.Injector.MapTo(mockItuneSV, new(service.ItunesService))
 
-			controller := NewUserController(mockUserService, mockItuneSV)
+			controller := NewUserController()
 			err := controller.GenerateLink(c)
 
 			// Assertions

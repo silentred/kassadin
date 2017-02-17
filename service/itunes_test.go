@@ -5,11 +5,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	redis "gopkg.in/redis.v5"
 )
 
 func TestItunesSV(t *testing.T) {
-	sv := ItunesSV{}
+	InitServices()
+	sv := Store.Get("svc.itune").(*ItunesSV)
 
 	tests := []struct {
 		bundleID string
@@ -30,7 +30,9 @@ func TestItunesSV(t *testing.T) {
 }
 
 func TestGenLink(t *testing.T) {
-	sv := ItunesSV{}
+	InitServices()
+	sv := Store.Get("svc.itune").(*ItunesSV)
+
 	tests := []struct {
 		bundleID string
 		country  string
@@ -56,23 +58,23 @@ func Test_ItunesSuite(t *testing.T) {
 
 type ItunesTestSuite struct {
 	suite.Suite
-	redisCli *redis.Client
 }
 
 // SetupTest runs before each test
 func (suite *ItunesTestSuite) SetupTest() {
-	if suite.redisCli == nil {
-		redisInfo := RedisInfo{
-			Host:     "127.0.0.1",
-			Port:     6379,
-			Database: 0,
-		}
-		suite.redisCli = InitRedisClient(redisInfo)
-	}
+	// if suite.redisCli == nil {
+	// 	redisInfo := RedisInfo{
+	// 		Host:     "127.0.0.1",
+	// 		Port:     6379,
+	// 		Database: 0,
+	// 	}
+	// 	suite.redisCli = InitRedisClient(redisInfo)
+	// }
 }
 
-func (suite *ItunesTestSuite) TestRedis() {
-	sv := ItunesSV{"token"}
+func (suite *ItunesTestSuite) Test_SearchByBundleID() {
+	InitServices()
+	sv := Store.Get("svc.itune").(*ItunesSV)
 
 	tests := []struct {
 		bundleID string

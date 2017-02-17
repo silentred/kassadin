@@ -5,13 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/silentred/template/controllers"
+	"github.com/silentred/template/filter"
+	"github.com/silentred/template/util"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	session "github.com/silentred/echo-session"
-	"github.com/silentred/template/controllers"
-	"github.com/silentred/template/filter"
-	"github.com/silentred/template/service"
-	"github.com/silentred/template/util"
 	"github.com/spf13/viper"
 )
 
@@ -24,10 +23,7 @@ type routeInfo struct {
 
 func InitRoutes(e *echo.Echo) {
 	// initialize controlllers
-	userSV := service.NewUserSV()
-	ituneSV := service.NewItunesSV(service.AdToken)
-
-	user := controllers.NewUserController(userSV, ituneSV)
+	user := controllers.NewUserController()
 
 	// custom middleware
 	metrics := filter.Metrics()

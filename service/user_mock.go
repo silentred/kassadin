@@ -23,3 +23,7 @@ func (u *UserMockSV) HandleUpdatePlayerPoint(deviceID, bundleID string, point in
 	args := u.Called()
 	return args.Get(0).(util.JSON), args.Error(1)
 }
+
+type UserRepoMock struct {
+	mock.Mock
+}

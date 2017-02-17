@@ -3,13 +3,12 @@ package service
 import (
 	"testing"
 
-	redis "gopkg.in/redis.v5"
-
 	"time"
 
-	"github.com/astaxie/beego/orm"
-	"github.com/labstack/echo"
+	"fmt"
+
 	"github.com/silentred/template/util"
+	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,44 +38,31 @@ func testUserMock(t *testing.T) {
 func Test_DBSuite(t *testing.T) {
 	e := echo.New()
 	util.InitLogger(e)
-	suite.Run(t, new(DBTestSuite))
+
+	InitTestDBs()
+	InitServices()
+
+	dbSuite := new(DBTestSuite)
+	Injector.Apply(dbSuite)
+	suite.Run(t, dbSuite)
 }
 
 // Define the suite, and absorb the built-in basic suite
 // functionality from testify - including assertion methods.
 type DBTestSuite struct {
 	suite.Suite
-	ormer    orm.Ormer
-	redisCli *redis.Client
+	UserSvc *UserSV `inject`
 }
 
 // SetupTest runs before each test
 func (suite *DBTestSuite) SetupTest() {
-	if suite.ormer == nil {
-		mysqlInfo := MysqlInfo{
-			Host:     "127.0.0.1",
-			Port:     3306,
-			User:     "jason",
-			Password: "jason",
-			Database: "fenda",
-		}
-		suite.ormer = InitMysqlORM(mysqlInfo)
-	}
-
-	if suite.redisCli == nil {
-		redisInfo := RedisInfo{
-			Host:     "127.0.0.1",
-			Port:     6379,
-			Database: 0,
-		}
-		suite.redisCli = InitRedisClient(redisInfo)
-	}
 }
 
 // All methods that begin with "Test" are run as tests within a suite.
 func (suite *DBTestSuite) TestMysql() {
-	// suite.updateDeceasePoints(20)
-	// suite.updateDeceasePoints(-10)
+	suite.testUpdateDeceasePoints(20)
+
+	suite.testCreatePlayer()
 	suite.testGetPlayer()
 }
 
@@ -84,27 +70,30 @@ func (suite *DBTestSuite) TestMysql() {
 func (suite *DBTestSuite) testCreatePlayer() {
 	// insert player
 	player := AffiliatePlayer{
-		DeviceID:  "test",
+		DeviceID:  fmt.Sprintf("test:%d", util.RandomCreateBytes(20)),
 		BundleID:  "test",
 		Points:    123,
 		SDKVer:    "test",
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	userSV := UserSV{}
-	err := userSV.createPlayer(player)
+	userSV := suite.UserSvc
+
+	err := userSV.UserRepo.createPlayer(player)
 	suite.Assert().NoError(err)
 }
 
 func (suite *DBTestSuite) testGetPlayer() {
-	userSV := UserSV{}
-	player, err := userSV.getPlayerBy("sdf", "sdf")
+	userSV := suite.UserSvc
+
+	player, err := userSV.UserRepo.getPlayerBy("sdf", "sdf")
 	suite.Assert().Error(err, player.BundleID)
 }
 
-func (suite *DBTestSuite) updateDeceasePoints(point int) {
+func (suite *DBTestSuite) testUpdateDeceasePoints(point int) {
 	// update Points
-	userSV := UserSV{}
+	userSV := suite.UserSvc
+
 	point, err := userSV.updatePlayerPoint("test", "test", point)
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(true, point >= 0)
@@ -112,6 +101,7 @@ func (suite *DBTestSuite) updateDeceasePoints(point int) {
 
 func (suite *DBTestSuite) TestRedis() {
 	userSV := UserSV{}
+	Injector.Apply(&userSV)
 	deviceID := "d123"
 	// token, err := userSV.getPlayToken(deviceID)
 	// suite.Assert().Equal(redis.Nil, err)
