@@ -31,6 +31,6 @@ func TestRoutes(t *testing.T) {
 	for _, test := range tests {
 		c := e.NewContext(nil, nil)
 		r.Find(test.method, test.path, c)
-		assert.Equal(t, test.result, len(c.ParamValues()) > 0)
+		assert.Equal(t, test.result, len(c.ParamValues()) > 1)
 	}
 }

@@ -8,7 +8,7 @@ var redisLocker util.Locker
 
 func GetRedisLocker() util.Locker {
 	if redisLocker == nil {
-		redisLocker = util.NewRedisLocker(RedisClient, 3)
+		redisLocker = util.NewRedisLocker(redisClient, 3)
 	}
 
 	return redisLocker

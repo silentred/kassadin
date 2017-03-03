@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/silentred/template/util"
-	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -36,15 +35,15 @@ func testUserMock(t *testing.T) {
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func Test_DBSuite(t *testing.T) {
-	e := echo.New()
-	util.InitLogger(e)
+	// e := echo.New()
+	// util.InitLogger(e)
 
-	InitTestDBs()
-	InitServices()
+	// InitTestDBs()
+	// InitServices()
 
-	dbSuite := new(DBTestSuite)
-	Injector.Apply(dbSuite)
-	suite.Run(t, dbSuite)
+	// dbSuite := new(DBTestSuite)
+	// Injector.Apply(dbSuite)
+	// suite.Run(t, dbSuite)
 }
 
 // Define the suite, and absorb the built-in basic suite
