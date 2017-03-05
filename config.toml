@@ -3,10 +3,12 @@ runMode = "dev"
 name = "webapp"
 sessionEnable = false
 sessionProvider = "file"
+// default Logger
 logProvider = "file"
 logRotate = true
-logLimit = "100MB"
-latencyEnable=true
+logRotateType = "day" // size | day 
+//logLimit = "100MB"
+//latencyEnable=true
 
 [mysql]
 host="localhost"

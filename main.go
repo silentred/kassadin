@@ -1,10 +1,10 @@
-package main
+package kassadin
 
 import (
+	"github.com/labstack/echo"
 	"github.com/silentred/template/router"
 	"github.com/silentred/template/service"
 	"github.com/silentred/template/util"
-	"github.com/labstack/echo"
 )
 
 // Echo is the web engine
