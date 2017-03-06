@@ -13,8 +13,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
-	"github.com/silentred/kassadin/db"
-	"github.com/silentred/kassadin/redis"
 	"github.com/silentred/kassadin/util"
 	"github.com/silentred/kassadin/util/container"
 	"github.com/silentred/kassadin/util/rotator"
@@ -121,19 +119,6 @@ func (app *App) initConfig() {
 	l.RotateLimit = viper.GetString("app.logLimit")
 
 	// TODO: session config
-	configName = fmt.Sprint(configName, ".toml")
-	// mysql config
-	dbmap, err := db.InitDB(configName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	app.Store.Set("mysql", dbmap)
-	// redis config
-	redis := redis.New(configName)
-	if redis == nil {
-		log.Fatal("redis instance is nil")
-	}
-	app.Store.Set("redis", dbmap)
 
 	config.Log = l
 	app.config = config
@@ -145,6 +130,14 @@ func (app *App) initConfig() {
 			log.Fatal(err)
 		}
 	}
+}
+
+func (app *App) GetConfigFile() string  {
+	if AppMode != "" {
+		return fmt.Sprintf("%s.%s", "config", AppMode)
+	}
+	return fmt.Sprintf("%s.%s", "config", AppMode)
+
 }
 
 func (app *App) initLogger() {
@@ -285,3 +278,5 @@ func (app *App) graceStart() error {
 
 	return nil
 }
+
+

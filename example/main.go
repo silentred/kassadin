@@ -8,7 +8,10 @@ import (
 	"github.com/silentred/kassadin"
 	"github.com/silentred/kassadin/example/model"
 
+	"fmt"
+	"github.com/Sirupsen/logrus"
 	"github.com/silentred/kassadin/db"
+	"github.com/silentred/kassadin/redis"
 )
 
 func main() {
@@ -21,6 +24,21 @@ func main() {
 }
 
 func initConfig(app *kassadin.App) error {
+	configName := app.GetConfigFile()
+	configName = fmt.Sprint(configName, ".toml")
+	// mysql config
+	dbmap, err := db.InitDB(configName)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	app.Store.Set("mysql", dbmap)
+	// redis config
+	redis := redis.New(configName)
+	if redis == nil {
+		logrus.Fatal("redis instance is nil")
+	}
+	app.Store.Set("redis", dbmap)
+
 	return nil
 }
 
