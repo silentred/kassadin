@@ -13,14 +13,13 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
+	"github.com/silentred/kassadin/db"
+	"github.com/silentred/kassadin/redis"
 	"github.com/silentred/kassadin/util"
 	"github.com/silentred/kassadin/util/container"
 	"github.com/silentred/kassadin/util/rotator"
 	"github.com/silentred/kassadin/util/strings"
 	"github.com/spf13/viper"
-	"github.com/silentred/kassadin/db"
-	"github.com/silentred/kassadin/redis"
-	"github.com/golang/go/src/pkg/path"
 )
 
 var (
@@ -31,15 +30,12 @@ func init() {
 	flag.StringVar(&AppMode, "mode", "dev", "RunMode of the application: dev or prod")
 }
 
-// Map stores objects
-type Map map[string]interface{}
-
 // HookFunc when app starting and tearing down
 type HookFunc func(*App) error
 
 // App represents the application
 type App struct {
-	Store        *Map
+	Store        *container.Map
 	Injector     container.Injector
 	Route        *echo.Echo
 	loggers      map[string]*logrus.Logger
@@ -54,7 +50,7 @@ type App struct {
 // NewApp gets a new application
 func NewApp() *App {
 	return &App{
-		Store:    &Map{},
+		Store:    &container.Map{},
 		Injector: container.NewInjector(),
 		Route:    echo.New(),
 		loggers:  make(map[string]*logrus.Logger),
@@ -71,6 +67,27 @@ func (app *App) Logger(name string) *logrus.Logger {
 	}
 
 	return nil
+}
+
+// Set object into app.Store and Map it into app.Injector
+func (app *App) Set(key string, object interface{}, ifacePtr interface{}) {
+	app.Store.Set(key, object)
+	if ifacePtr != nil {
+		app.Injector.MapTo(object, ifacePtr)
+	} else {
+		app.Injector.Map(object)
+	}
+}
+
+// Get object from app.Store
+func (app *App) Get(key string) interface{} {
+	return app.Store.Get(key)
+}
+
+// Inject dependencies to the object. Please MAKE SURE that the dependencies should be stored at app.Injector
+// before this method is called. Please use app.Set() to make this happen.
+func (app *App) Inject(object interface{}) error {
+	return app.Injector.Apply(object)
 }
 
 // InitConfig in format of toml
@@ -104,22 +121,19 @@ func (app *App) initConfig() {
 	l.RotateLimit = viper.GetString("app.logLimit")
 
 	// TODO: session config
-	// TODO: mysql config
-
-	currpath, _ := os.Getwd()
-	confpath := path.Join(currpath, AppMode, ".toml")
-
-	dbmap, err := db.InitDB(confpath)
+	configName = fmt.Sprint(configName, ".toml")
+	// mysql config
+	dbmap, err := db.InitDB(configName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	app.Store["mysql"] = dbmap
-	// TODO: redis config
-	redis := redis.New(confpath)
+	app.Store.Set("mysql", dbmap)
+	// redis config
+	redis := redis.New(configName)
 	if redis == nil {
 		log.Fatal("redis instance is nil")
 	}
-	app.Store["redis"] = dbmap
+	app.Store.Set("redis", dbmap)
 
 	config.Log = l
 	app.config = config

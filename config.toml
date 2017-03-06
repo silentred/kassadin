@@ -3,11 +3,10 @@ runMode = "dev"
 name = "webapp"
 port = 8080
 
-// default Logger
 logProvider = "file"
 logPath = "."
 logRotate = true
-logRotateType = "day" // size | day 
+logRotateType = "day"
 logLimit = "100MB"
 
 [session]

@@ -22,8 +22,6 @@ import (
 
 type DBMap map[string]*DatabaseManager
 
-
-
 func InitDB(f string) (DBMap, error) {
 	conf, err := toml.LoadFile(f)
 	if err != nil {

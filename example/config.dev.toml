@@ -13,30 +13,23 @@ logLimit = "100MB"
 enable = false
 provider = "file"
 
-[mysql]
-host="localhost"
-port=3306
-user="jason"
-db="fenda"
-password="jason"
-
 [db]
   [db.testdb]
   [db.testdb.master]
-      data_source = "work:worktest@tcp(localhost:3306)/testdb?charset=utf8&loc=Asia%2FShanghai"
+      data_source = "root:@tcp(localhost:3306)/testdb?charset=utf8&loc=Asia%2FShanghai"
   [db.testdb.read]
     [db.testdb.read.0a]
-        data_source = "work:worktest@tcp(localhost:3306)/testdb?charset=utf8&loc=Asia%2FShanghai"
+        data_source = "root:@tcp(localhost:3306)/testdb?charset=utf8&loc=Asia%2FShanghai"
 
 
-[rediscluster]
-[rediscluster.write]
+[redis]
+[redis.write]
     address = "localhost:6379"
     password = "worktest"
     db = 0
     poolsize = 30
 
-[rediscluster.read]
+[redis.read]
     address = "localhost:6379"
     password = "worktest"
     db = 0

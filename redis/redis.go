@@ -8,11 +8,10 @@
 package redis
 
 import (
-	"github.com/pelletier/go-toml"
-	"gopkg.in/redis.v5"
-	"github.com/wanghe4096/artemis/config"
-	"log"
 	"github.com/Sirupsen/logrus"
+	toml "github.com/pelletier/go-toml"
+	"gopkg.in/redis.v5"
+	"log"
 )
 
 // RedisManager is managing redis clients.
@@ -21,26 +20,25 @@ type RedisManager map[string]*redis.Client
 // New is redis manager.
 func New(confpath string) map[string]*redis.Client {
 	logrus.Debug(confpath)
-	conf, err := config.LoadConfigFile(confpath)
+	conf, err := toml.LoadFile(confpath)
 	if err != nil {
 		log.Fatalf("redis: %s", err.Error())
 		return nil
 	}
 	var redisManager RedisManager
 	redisManager = make(map[string]*redis.Client, 0)
-
-	t := conf.Get("rediscluster").(*toml.TomlTree)
+	t := conf.Get("redis").(*toml.TomlTree)
 	for _, value := range t.Keys() {
 		instanceConf := t.Get(value).(*toml.TomlTree)
 		address := instanceConf.Get("address").(string)
 		password := instanceConf.Get("password").(string)
-		db := instanceConf.Get("db").(int)
+		db := instanceConf.Get("db").(int64)
 		poolSize := instanceConf.Get("poolsize").(int64)
 
 		client := redis.NewClient(&redis.Options{
 			Addr:     address,
 			Password: password,
-			DB:       db,
+			DB:       int(db),
 			PoolSize: int(poolSize),
 		})
 
