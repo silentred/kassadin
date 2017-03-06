@@ -1,0 +1,25 @@
+[db]
+  [db.user]
+  [db.user.master] #
+      data_source = "work:worktest@tcp(localhost:3306)/testdb?charset=utf8"
+  [db.user.read]
+    [db.user.read.0a]
+        data_source = "work:worktest@tcp(localhost:3306)/rrc_user?charset=utf8&loc=Asia%2FShanghai"
+
+
+[rediscluster]
+[rediscluster.kvstore]
+    address = "e3b8d1e0b3c940a3.m.cnbja.kvstore.aliyuncs.com:6379"
+    password = "e3b8d1e0b3c940a3:5UlzBT8bg0LNqe3ZrXmPVpEi"
+    db = 0
+    poolsize = 30
+[rediscluster.kvstore0]
+    address = "8e2fe102c2324afe.m.cnbja.kvstore.aliyuncs.com:6379"
+    password = "8e2fe102c2324afe:Qs83FTcksNb2HMqL"
+    db = 0
+    poolsize = 30
+
+
+[memcache]
+    [memcache.main]
+    	address = "127.0.0.1:11211"

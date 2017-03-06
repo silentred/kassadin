@@ -16,6 +16,10 @@ import (
 	"github.com/silentred/kassadin/util/rotator"
 	"github.com/silentred/kassadin/util/strings"
 	"github.com/spf13/viper"
+	"github.com/silentred/kassadin/db"
+	"github.com/silentred/kassadin/redis"
+	"github.com/golang/go/src/pkg/path"
+	"github.com/pelletier/go-toml"
 )
 
 // Map stores objects
@@ -26,13 +30,13 @@ type HookFunc func(*App) error
 
 // App represents the application
 type App struct {
-	Store    *Map
-	Injector container.Injector
-
-	Route   *echo.Echo
-	loggers map[string]*logrus.Logger
-	config  AppConfig
-
+	Store        *Map
+	Injector     container.Injector
+	Route        *echo.Echo
+	loggers      map[string]*logrus.Logger
+	config       AppConfig
+	Db           db.DBMap
+	Redis        redis.RedisManager
 	configHook   HookFunc
 	loggerHook   HookFunc
 	serviceHook  HookFunc
@@ -64,9 +68,11 @@ func (app *App) Logger(name string) *logrus.Logger {
 // InitConfig in format of toml
 func (app *App) initConfig() {
 	// use viper to resolve config.toml
+
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(util.SelfDir())
 	viper.SetConfigName("config")
+
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatal(err)
@@ -89,7 +95,13 @@ func (app *App) initConfig() {
 
 	// TODO: session config
 	// TODO: mysql config
+	currpath, _ := os.Getwd()
+	confpath := path.Join(currpath, AppMode, ".toml")
+	app.Db, err = db.InitDB(confpath)
+
+
 	// TODO: redis config
+	app.Redis, err := redis.New(confpath)
 
 	config.Log = l
 
