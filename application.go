@@ -28,15 +28,13 @@ func init() {
 	flag.StringVar(&AppMode, "mode", "dev", "RunMode of the application: dev or prod")
 }
 
-// Map stores objects
-type Map map[string]interface{}
 
 // HookFunc when app starting and tearing down
 type HookFunc func(*App) error
 
 // App represents the application
 type App struct {
-	Store    *Map
+	Store    *container.Map
 	Injector container.Injector
 
 	Route   *echo.Echo
@@ -71,6 +69,27 @@ func (app *App) Logger(name string) *logrus.Logger {
 
 	return nil
 }
+
+// Set object into app.Store and Map it into app.Injector
+func (app *App) Set(key string, object interface{}, ifacePtr interface{}) {
+	app.Store.Set(key, object)
+	if ifacePtr != nil {
+		app.Injector.MapTo(object, ifacePtr)
+	} else {
+		app.Injector.Map(object)
+	}
+}
+
+// Get object from app.Store
+func (app *App) Get(key string) interface{} {
+	return app.Store.Get(key)
+}
+
+// Inject dependencies to object
+func (app *App) Inject(object interface{}) error {
+	return app.Injector.Apply(object)
+}
+
 
 // InitConfig in format of toml
 func (app *App) initConfig() {
