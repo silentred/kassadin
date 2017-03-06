@@ -1,0 +1,23 @@
+[app]
+runMode = "dev"
+name = "webapp"
+sessionEnable = false
+sessionProvider = "file"
+// default Logger
+logProvider = "file"
+logRotate = true
+logRotateType = "day" // size | day 
+//logLimit = "100MB"
+//latencyEnable=true
+
+[mysql]
+host="localhost"
+port=3306
+user="jason"
+db="fenda"
+password="jason"
+
+[redis]
+host="localhost"
+port= 6379
+db = 0

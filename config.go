@@ -11,24 +11,24 @@ const (
 	RotateBySize = "size"
 )
 
-type appConfig struct {
+type AppConfig struct {
 	Name string
 	Mode string
 	Port int
 
-	Sess  sessionConfig
-	Log   logConfig
-	Mysql mysqlConfig
-	Redis redisConfig
+	Sess  SessionConfig
+	Log   LogConfig
+	Mysql MysqlConfig
+	Redis RedisConfig
 }
 
-type sessionConfig struct {
+type SessionConfig struct {
 	Providor  string
 	StorePath string
 	Enable    bool
 }
 
-type logConfig struct {
+type LogConfig struct {
 	Name        string
 	Providor    string
 	RotateMode  string
@@ -36,8 +36,8 @@ type logConfig struct {
 	LogPath     string
 }
 
-type mysqlConfig struct {
+type MysqlConfig struct {
 }
 
-type redisConfig struct {
+type RedisConfig struct {
 }

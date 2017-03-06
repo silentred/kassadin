@@ -5,10 +5,6 @@ import:
 - package: github.com/silentred/echo-session
 - package: github.com/silentred/echo-log
 - package: github.com/spf13/viper
-- package: github.com/astaxie/beego
-  version: ^1.7.2
-  subpackages:
-  - orm
 testImport:
 - package: github.com/stretchr/testify
   version: ^1.1.x
