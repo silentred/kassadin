@@ -144,6 +144,9 @@ func (app *App) initLogger() {
 		defaultLogger.Level = logrus.DebugLevel
 	}
 
+	// set logger
+	app.loggers["default"] = defaultLogger
+
 	// hook
 	if app.loggerHook != nil {
 		err := app.loggerHook(app)
