@@ -21,13 +21,13 @@ import (
 )
 
 var (
+	// AppMode is App's running envirenment. Valid values are dev and prod
 	AppMode string
 )
 
 func init() {
 	flag.StringVar(&AppMode, "mode", "dev", "RunMode of the application: dev or prod")
 }
-
 
 // HookFunc when app starting and tearing down
 type HookFunc func(*App) error
@@ -36,8 +36,8 @@ type HookFunc func(*App) error
 type App struct {
 	Store    *container.Map
 	Injector container.Injector
+	Route    *echo.Echo
 
-	Route   *echo.Echo
 	loggers map[string]*logrus.Logger
 	config  AppConfig
 
@@ -86,7 +86,7 @@ func (app *App) Get(key string) interface{} {
 }
 
 // Inject dependencies to the object. Please MAKE SURE that the dependencies should be stored at app.Injector
-// before this method is called. Please use app.Set() to make this happen. 
+// before this method is called. Please use app.Set() to make this happen.
 func (app *App) Inject(object interface{}) error {
 	return app.Injector.Apply(object)
 }
@@ -94,10 +94,7 @@ func (app *App) Inject(object interface{}) error {
 // InitConfig in format of toml
 func (app *App) initConfig() {
 	// use viper to resolve config.toml
-	var configName = "config"
-	if AppMode != "" {
-		configName = fmt.Sprintf("%s.%s", "config", AppMode)
-	}
+	var configName = app.GetConfigFile()
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(util.SelfDir())
 	viper.SetConfigName(configName)
@@ -136,6 +133,14 @@ func (app *App) initConfig() {
 			log.Fatal(err)
 		}
 	}
+}
+
+func (app *App) GetConfigFile() string {
+	var configName = "config"
+	if AppMode != "" {
+		configName = fmt.Sprintf("%s.%s", "config", AppMode)
+	}
+	return configName
 }
 
 func (app *App) initLogger() {
