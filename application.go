@@ -9,6 +9,8 @@ import (
 	"os/signal"
 	"time"
 
+	"flag"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
 	"github.com/silentred/kassadin/util"
@@ -19,8 +21,15 @@ import (
 	"github.com/silentred/kassadin/db"
 	"github.com/silentred/kassadin/redis"
 	"github.com/golang/go/src/pkg/path"
-	"github.com/pelletier/go-toml"
 )
+
+var (
+	AppMode string
+)
+
+func init() {
+	flag.StringVar(&AppMode, "mode", "dev", "RunMode of the application: dev or prod")
+}
 
 // Map stores objects
 type Map map[string]interface{}
@@ -35,8 +44,6 @@ type App struct {
 	Route        *echo.Echo
 	loggers      map[string]*logrus.Logger
 	config       AppConfig
-	Db           db.DBMap
-	Redis        redis.RedisManager
 	configHook   HookFunc
 	loggerHook   HookFunc
 	serviceHook  HookFunc
@@ -47,19 +54,20 @@ type App struct {
 // NewApp gets a new application
 func NewApp() *App {
 	return &App{
-		Route: echo.New(),
+		Store:    &Map{},
+		Injector: container.NewInjector(),
+		Route:    echo.New(),
+		loggers:  make(map[string]*logrus.Logger),
 	}
-}
-
-// NewLogger in App.loggers
-func (app *App) NewLogger(config LogConfig) {
-
 }
 
 // Logger of name
 func (app *App) Logger(name string) *logrus.Logger {
 	if name == "" {
 		return app.loggers["default"]
+	}
+	if l, ok := app.loggers[name]; ok {
+		return l
 	}
 
 	return nil
@@ -68,11 +76,13 @@ func (app *App) Logger(name string) *logrus.Logger {
 // InitConfig in format of toml
 func (app *App) initConfig() {
 	// use viper to resolve config.toml
-
+	var configName = "config"
+	if AppMode != "" {
+		configName = fmt.Sprintf("%s.%s", "config", AppMode)
+	}
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(util.SelfDir())
-	viper.SetConfigName("config")
-
+	viper.SetConfigName(configName)
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatal(err)
@@ -95,16 +105,23 @@ func (app *App) initConfig() {
 
 	// TODO: session config
 	// TODO: mysql config
+
 	currpath, _ := os.Getwd()
 	confpath := path.Join(currpath, AppMode, ".toml")
-	app.Db, err = db.InitDB(confpath)
 
-
+	dbmap, err := db.InitDB(confpath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	app.Store["mysql"] = dbmap
 	// TODO: redis config
-	app.Redis, err := redis.New(confpath)
+	redis := redis.New(confpath)
+	if redis == nil {
+		log.Fatal("redis instance is nil")
+	}
+	app.Store["redis"] = dbmap
 
 	config.Log = l
-
 	app.config = config
 
 	// hook
@@ -155,6 +172,9 @@ func (app *App) initLogger() {
 	default:
 		defaultLogger.Level = logrus.DebugLevel
 	}
+
+	// set logger
+	app.loggers["default"] = defaultLogger
 
 	// hook
 	if app.loggerHook != nil {

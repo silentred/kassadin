@@ -12,6 +12,7 @@ import (
 	"gopkg.in/redis.v5"
 	"github.com/wanghe4096/artemis/config"
 	"log"
+	"github.com/Sirupsen/logrus"
 )
 
 // RedisManager is managing redis clients.
@@ -19,6 +20,7 @@ type RedisManager map[string]*redis.Client
 
 // New is redis manager.
 func New(confpath string) map[string]*redis.Client {
+	logrus.Debug(confpath)
 	conf, err := config.LoadConfigFile(confpath)
 	if err != nil {
 		log.Fatalf("redis: %s", err.Error())
@@ -32,7 +34,7 @@ func New(confpath string) map[string]*redis.Client {
 		instanceConf := t.Get(value).(*toml.TomlTree)
 		address := instanceConf.Get("address").(string)
 		password := instanceConf.Get("password").(string)
-		db := instanceConf.Get("db").(int64)
+		db := instanceConf.Get("db").(int)
 		poolSize := instanceConf.Get("poolsize").(int64)
 
 		client := redis.NewClient(&redis.Options{

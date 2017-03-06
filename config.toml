@@ -25,3 +25,25 @@ password="jason"
 host="localhost"
 port= 6379
 db = 0
+
+[db]
+  [db.testdb]
+  [db.testdb.master]
+      data_source = "work:worktest@tcp(localhost:3306)/testdb?charset=utf8&loc=Asia%2FShanghai"
+  [db.testdb.read]
+    [db.testdb.read.0a]
+        data_source = "work:worktest@tcp(localhost:3306)/testdb?charset=utf8&loc=Asia%2FShanghai"
+
+
+[rediscluster]
+[rediscluster.write]
+    address = "localhost:6379"
+    password = "worktest"
+    db = 0
+    poolsize = 30
+
+[rediscluster.read]
+    address = "localhost:6379"
+    password = "worktest"
+    db = 0
+    poolsize = 30
