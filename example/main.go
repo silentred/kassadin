@@ -1,9 +1,15 @@
 package main
 
-import "github.com/silentred/kassadin"
-import "github.com/labstack/echo"
+import (
+	"flag"
+
+	"github.com/labstack/echo"
+	"github.com/silentred/kassadin"
+)
 
 func main() {
+	flag.Parse()
+
 	app := kassadin.NewApp()
 	app.RegisterConfigHook(initConfig)
 	app.RegisterRouteHook(initRoute)
