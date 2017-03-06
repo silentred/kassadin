@@ -1,14 +1,15 @@
 [app]
 runMode = "dev"
 name = "webapp"
-sessionEnable = false
-sessionProvider = "file"
-// default Logger
+port = 8080
+
 logProvider = "file"
 logRotate = true
-logRotateType = "day" // size | day 
-//logLimit = "100MB"
-//latencyEnable=true
+logRotateType = "day"
+logLimit = "100MB"
+
+sessionEnable = false
+sessionProvider = "file"
 
 [mysql]
 host="localhost"

@@ -1,4 +1,4 @@
-package util
+package strings
 
 import "testing"
 import "github.com/stretchr/testify/assert"

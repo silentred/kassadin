@@ -29,11 +29,12 @@ type SessionConfig struct {
 }
 
 type LogConfig struct {
-	Name        string
-	Providor    string
-	RotateMode  string
-	RotateLimit string
-	LogPath     string
+	Name         string
+	Providor     string
+	LogPath      string
+	RotateMode   string
+	RotateLimit  string
+	RotateEnable bool
 }
 
 type MysqlConfig struct {

@@ -3,6 +3,7 @@ package kassadin
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -12,6 +13,8 @@ import (
 	"github.com/labstack/echo"
 	"github.com/silentred/kassadin/util"
 	"github.com/silentred/kassadin/util/container"
+	"github.com/silentred/kassadin/util/rotator"
+	"github.com/silentred/kassadin/util/strings"
 	"github.com/spf13/viper"
 )
 
@@ -26,7 +29,7 @@ type App struct {
 	Store    *Map
 	Injector container.Injector
 
-	route   *echo.Echo
+	Route   *echo.Echo
 	loggers map[string]*logrus.Logger
 	config  AppConfig
 
@@ -39,7 +42,9 @@ type App struct {
 
 // NewApp gets a new application
 func NewApp() *App {
-	return nil
+	return &App{
+		Route: echo.New(),
+	}
 }
 
 // NewLogger in App.loggers
@@ -49,12 +54,16 @@ func (app *App) NewLogger(config LogConfig) {
 
 // Logger of name
 func (app *App) Logger(name string) *logrus.Logger {
+	if name == "" {
+		return app.loggers["default"]
+	}
+
 	return nil
 }
 
 // InitConfig in format of toml
 func (app *App) initConfig() {
-	// viper resolve config.toml
+	// use viper to resolve config.toml
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(util.SelfDir())
 	viper.SetConfigName("config")
@@ -63,25 +72,115 @@ func (app *App) initConfig() {
 		log.Fatal(err)
 	}
 
-	// hook
+	// make AppConfig; set data from viper
+	config := AppConfig{}
+	config.Name = viper.GetString("app.name")
+	config.Mode = viper.GetString("app.runMode")
+	config.Port = viper.GetInt("app.port")
 
+	// log config
+	l := LogConfig{}
+	l.Name = "default"
+	l.LogPath = viper.GetString("app.logPath")
+	l.Providor = viper.GetString("app.logProvider")
+	l.RotateEnable = viper.GetBool("app.logRotate")
+	l.RotateMode = viper.GetString("app.logRotateType")
+	l.RotateLimit = viper.GetString("app.logLimit")
+
+	// TODO: session config
+	// TODO: mysql config
+	// TODO: redis config
+
+	config.Log = l
+
+	app.config = config
+
+	// hook
+	if app.configHook != nil {
+		err = app.configHook(app)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 func (app *App) initLogger() {
 	// new default Logger
+	var writer io.Writer
+	var spliter rotator.Spliter
+
+	logConfig := app.config.Log
+
+	if logConfig.RotateEnable {
+		switch logConfig.RotateMode {
+		case RotateByDay:
+			spliter = rotator.NewDaySpliter()
+		case RotateBySize:
+			limitSize, err := strings.ParseByteSize(logConfig.RotateLimit) // 100 MB
+			if err != nil {
+				log.Fatal(err)
+			}
+			spliter = rotator.NewSizeSpliter(uint64(limitSize))
+		default:
+			log.Fatalf("invalid RotateMode: %s", logConfig.RotateMode)
+		}
+
+		writer = rotator.NewFileRotator(logConfig.LogPath, app.config.Name, "log", spliter)
+	}
+
+	if writer == nil {
+		writer = os.Stdout
+	}
+
+	defaultLogger := logrus.New()
+	defaultLogger.Formatter = &logrus.JSONFormatter{}
+	defaultLogger.Out = writer
+	switch app.config.Mode {
+	case ModeDev:
+		defaultLogger.Level = logrus.DebugLevel
+	case ModeProd:
+		defaultLogger.Level = logrus.ErrorLevel
+	default:
+		defaultLogger.Level = logrus.DebugLevel
+	}
+
 	// hook
+	if app.loggerHook != nil {
+		err := app.loggerHook(app)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 func (app *App) initService() {
 	// hoook
+	if app.serviceHook != nil {
+		err := app.serviceHook(app)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 func (app *App) initRoute() {
 	// hook
+	if app.routeHook != nil {
+		err := app.routeHook(app)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 func (app *App) shutdown() {
 	// hook
+	if app.shutdownHook != nil {
+		err := app.shutdownHook(app)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 // RegisterConfigHook at initConfig
@@ -121,7 +220,7 @@ func (app *App) Start() {
 func (app *App) graceStart() error {
 	// Start server
 	go func() {
-		if err := app.route.Start(fmt.Sprintf(":%d", app.config.Port)); err != nil {
+		if err := app.Route.Start(fmt.Sprintf(":%d", app.config.Port)); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -133,7 +232,7 @@ func (app *App) graceStart() error {
 	<-quit
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := app.route.Shutdown(ctx); err != nil {
+	if err := app.Route.Shutdown(ctx); err != nil {
 		log.Println(err)
 		return err
 	}
