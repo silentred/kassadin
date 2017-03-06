@@ -51,7 +51,7 @@ type App struct {
 // NewApp gets a new application
 func NewApp() *App {
 	return &App{
-		Store:    &Map{},
+		Store:    &container.Map{},
 		Injector: container.NewInjector(),
 		Route:    echo.New(),
 		loggers:  make(map[string]*logrus.Logger),
@@ -85,11 +85,11 @@ func (app *App) Get(key string) interface{} {
 	return app.Store.Get(key)
 }
 
-// Inject dependencies to object
+// Inject dependencies to the object. Please MAKE SURE that the dependencies should be stored at app.Injector
+// before this method is called. Please use app.Set() to make this happen. 
 func (app *App) Inject(object interface{}) error {
 	return app.Injector.Apply(object)
 }
-
 
 // InitConfig in format of toml
 func (app *App) initConfig() {
