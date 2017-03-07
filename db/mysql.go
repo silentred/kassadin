@@ -40,8 +40,6 @@ func NewMysqlManager(app *kassadin.App, config kassadin.MysqlConfig) (*MysqlMana
 		}
 	}
 
-	fmt.Printf("%#v", config)
-
 	mm := &MysqlManager{
 		Application:  app,
 		Config:       config,
