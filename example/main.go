@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 
 	"github.com/labstack/echo"
 	"github.com/silentred/kassadin"
@@ -14,6 +15,7 @@ func main() {
 	app := kassadin.NewApp()
 	app.RegisterConfigHook(initConfig)
 	app.RegisterRouteHook(initRoute)
+	app.RegisterServiceHook(initService)
 	app.Start()
 }
 
@@ -22,10 +24,11 @@ func initConfig(app *kassadin.App) error {
 }
 
 func initService(app *kassadin.App) error {
-	mm := db.NewMysqlManager(app, app.Config.Mysql)
-	if mm != nil {
-		app.Set("mysql", mm, nil)
+	mm, err := db.NewMysqlManager(app, app.Config.Mysql)
+	if err != nil {
+		log.Fatal(err)
 	}
+	app.Set("mysql", mm, nil)
 
 	return nil
 }

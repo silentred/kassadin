@@ -4,6 +4,9 @@ import (
 	"container/ring"
 	"log"
 
+	"fmt"
+
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/silentred/kassadin"
 )
@@ -22,7 +25,7 @@ type MysqlManager struct {
 }
 
 // NewMysqlManager returns a new MysqlManager
-func NewMysqlManager(app *kassadin.App, config kassadin.MysqlConfig) *MysqlManager {
+func NewMysqlManager(app *kassadin.App, config kassadin.MysqlConfig) (*MysqlManager, error) {
 	var readOnlyLength int
 	var err error
 	var engine *xorm.Engine
@@ -32,6 +35,8 @@ func NewMysqlManager(app *kassadin.App, config kassadin.MysqlConfig) *MysqlManag
 			readOnlyLength++
 		}
 	}
+
+	fmt.Printf("%#v", config)
 
 	mm := &MysqlManager{
 		Application:  app,
@@ -43,23 +48,29 @@ func NewMysqlManager(app *kassadin.App, config kassadin.MysqlConfig) *MysqlManag
 	for _, instance := range config.Instances {
 		if instance.ReadOnly {
 			engine, err = mm.newORM(instance)
-			if err != nil {
+			if err == nil {
 				mm.readOnlyRing.Value = engine
 				mm.readOnlyRing = mm.readOnlyRing.Next()
+				mm.databases[instance.Name] = engine
+			} else {
+				fmt.Printf("WARNING when initializing MySQL: %s \n", err)
 			}
 		} else {
-			mm.master, err = mm.newORM(instance)
+			engine, err = mm.newORM(instance)
 			if err != nil {
 				log.Fatal(err)
 			}
+			mm.master = engine
+			mm.databases[instance.Name] = mm.master
 		}
 	}
 
 	if mm.master == nil {
-		log.Fatal("Mysql master is nil")
+		err = fmt.Errorf("Mysql master is nil")
+		return mm, err
 	}
 
-	return mm
+	return mm, nil
 }
 
 func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, error) {
@@ -69,6 +80,12 @@ func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, erro
 	}
 	orm.SetMaxIdleConns(MaxIdle)
 	orm.SetMaxOpenConns(MaxOpen)
+
+	err = orm.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if mm.Application != nil {
 		if mm.Application.Config.Mode == kassadin.ModeDev {
 			orm.ShowSQL(true)
@@ -76,7 +93,7 @@ func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, erro
 		}
 	}
 
-	return nil, nil
+	return orm, nil
 }
 
 // DB gets databases by name
@@ -87,16 +104,19 @@ func (mm *MysqlManager) DB(name string) *xorm.Engine {
 	return nil
 }
 
+// R get read-only mysql Engine
 func (mm *MysqlManager) R() *xorm.Engine {
 	if mm.readOnlyRing.Len() == 0 {
 		return mm.master
 	}
 	if e, ok := mm.readOnlyRing.Value.(*xorm.Engine); ok {
+		mm.readOnlyRing = mm.readOnlyRing.Next()
 		return e
 	}
 	return nil
 }
 
+// W gets master mysql Engine
 func (mm *MysqlManager) W() *xorm.Engine {
 	return mm.master
 }
