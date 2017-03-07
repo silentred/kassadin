@@ -2,9 +2,12 @@ package db
 
 import (
 	"container/ring"
+	"io"
 	"log"
 
 	"fmt"
+
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/core"
@@ -75,6 +78,8 @@ func NewMysqlManager(app *kassadin.App, config kassadin.MysqlConfig) (*MysqlMana
 }
 
 func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, error) {
+	var output io.Writer = os.Stdout
+
 	orm, err := xorm.NewEngine("mysql", mysql.String())
 	if err != nil {
 		return nil, err
@@ -82,11 +87,9 @@ func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, erro
 	orm.SetMaxIdleConns(MaxIdle)
 	orm.SetMaxOpenConns(MaxOpen)
 
-	// set Logger output
-	logger := xorm.NewSimpleLogger(mm.Application.Logger("default").Out)
-	orm.SetLogger(logger)
-
 	if mm.Application != nil {
+		output = mm.Application.Logger("default").Out
+
 		if mm.Application.Config.Mode == kassadin.ModeDev {
 			orm.ShowSQL(true)
 			orm.ShowExecTime(true)
@@ -95,6 +98,10 @@ func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, erro
 			orm.Logger().SetLevel(core.LOG_ERR)
 		}
 	}
+
+	// set Logger output
+	logger := xorm.NewSimpleLogger(output)
+	orm.SetLogger(logger)
 
 	err = orm.Ping()
 	if err != nil {
