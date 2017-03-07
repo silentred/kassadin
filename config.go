@@ -1,5 +1,9 @@
 package kassadin
 
+import (
+	"fmt"
+)
+
 const (
 	ModeDev  = "dev"
 	ModeProd = "prod"
@@ -38,6 +42,21 @@ type LogConfig struct {
 }
 
 type MysqlConfig struct {
+	Instances []MysqlInstance
+}
+
+type MysqlInstance struct {
+	Name     string `json:"name"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	User     string `json:"user"`
+	Pwd      string `json:"password"`
+	Db       string `json:"database"`
+	ReadOnly bool   `json:"read_only"`
+}
+
+func (inst MysqlInstance) String() string {
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8", inst.User, inst.Pwd, inst.Host, inst.Port, inst.Db)
 }
 
 type RedisConfig struct {

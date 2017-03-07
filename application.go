@@ -11,6 +11,8 @@ import (
 
 	"flag"
 
+	"encoding/json"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
 	"github.com/silentred/kassadin/util"
@@ -26,7 +28,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&AppMode, "mode", "dev", "RunMode of the application: dev or prod")
+	flag.StringVar(&AppMode, "mode", "", "RunMode of the application: dev or prod")
 }
 
 // HookFunc when app starting and tearing down
@@ -39,7 +41,7 @@ type App struct {
 	Route    *echo.Echo
 
 	loggers map[string]*logrus.Logger
-	config  AppConfig
+	Config  AppConfig
 
 	configHook   HookFunc
 	loggerHook   HookFunc
@@ -50,12 +52,15 @@ type App struct {
 
 // NewApp gets a new application
 func NewApp() *App {
-	return &App{
+	app := &App{
 		Store:    &container.Map{},
 		Injector: container.NewInjector(),
 		Route:    echo.New(),
 		loggers:  make(map[string]*logrus.Logger),
 	}
+	// register App itself
+	app.Set("app", app, nil)
+	return app
 }
 
 // Logger of name
@@ -117,14 +122,24 @@ func (app *App) initConfig() {
 	l.RotateEnable = viper.GetBool("app.logRotate")
 	l.RotateMode = viper.GetString("app.logRotateType")
 	l.RotateLimit = viper.GetString("app.logLimit")
+	config.Log = l
 
 	// TODO: session config
 	// TODO: mysql config
+	mysql := MysqlConfig{}
+	mysqlConfig := viper.Get("mysql")
+	mysqlConfigBytes, err := json.Marshal(mysqlConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = json.Unmarshal(mysqlConfigBytes, &mysql.Instances)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config.Mysql = mysql
+
 	// TODO: redis config
-
-	config.Log = l
-
-	app.config = config
+	app.Config = config
 
 	// hook
 	if app.configHook != nil {
@@ -148,7 +163,7 @@ func (app *App) initLogger() {
 	var writer io.Writer
 	var spliter rotator.Spliter
 
-	logConfig := app.config.Log
+	logConfig := app.Config.Log
 
 	if logConfig.RotateEnable {
 		switch logConfig.RotateMode {
@@ -164,7 +179,7 @@ func (app *App) initLogger() {
 			log.Fatalf("invalid RotateMode: %s", logConfig.RotateMode)
 		}
 
-		writer = rotator.NewFileRotator(logConfig.LogPath, app.config.Name, "log", spliter)
+		writer = rotator.NewFileRotator(logConfig.LogPath, app.Config.Name, "log", spliter)
 	}
 
 	if writer == nil {
@@ -174,7 +189,7 @@ func (app *App) initLogger() {
 	defaultLogger := logrus.New()
 	defaultLogger.Formatter = &logrus.JSONFormatter{}
 	defaultLogger.Out = writer
-	switch app.config.Mode {
+	switch app.Config.Mode {
 	case ModeDev:
 		defaultLogger.Level = logrus.DebugLevel
 	case ModeProd:
@@ -262,7 +277,7 @@ func (app *App) Start() {
 func (app *App) graceStart() error {
 	// Start server
 	go func() {
-		if err := app.Route.Start(fmt.Sprintf(":%d", app.config.Port)); err != nil {
+		if err := app.Route.Start(fmt.Sprintf(":%d", app.Config.Port)); err != nil {
 			log.Fatal(err)
 		}
 	}()

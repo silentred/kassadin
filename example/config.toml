@@ -8,15 +8,27 @@ logRotate = true
 logRotateType = "day"
 logLimit = "100MB"
 
-sessionEnable = false
-sessionProvider = "file"
+[session]
+enable = false
+provider = "file"
 
-[mysql]
+[[mysql]]
+name="master"
 host="localhost"
 port=3306
-user="jason"
-db="fenda"
-password="jason"
+user="root"
+db="test"
+password=""
+read_only=false
+
+[[mysql]]
+name="slave"
+host="localhost"
+port=3306
+user="root"
+db="test"
+password=""
+read_only=true
 
 [redis]
 host="localhost"
