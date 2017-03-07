@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
 	"github.com/silentred/kassadin"
 )
@@ -81,10 +82,17 @@ func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, erro
 	orm.SetMaxIdleConns(MaxIdle)
 	orm.SetMaxOpenConns(MaxOpen)
 
+	// set Logger output
+	logger := xorm.NewSimpleLogger(mm.Application.Logger("default").Out)
+	orm.SetLogger(logger)
+
 	if mm.Application != nil {
 		if mm.Application.Config.Mode == kassadin.ModeDev {
 			orm.ShowSQL(true)
 			orm.ShowExecTime(true)
+			orm.Logger().SetLevel(core.LOG_DEBUG)
+		} else {
+			orm.Logger().SetLevel(core.LOG_ERR)
 		}
 	}
 
