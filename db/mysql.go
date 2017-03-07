@@ -81,11 +81,6 @@ func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, erro
 	orm.SetMaxIdleConns(MaxIdle)
 	orm.SetMaxOpenConns(MaxOpen)
 
-	err = orm.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	if mm.Application != nil {
 		if mm.Application.Config.Mode == kassadin.ModeDev {
 			orm.ShowSQL(true)
@@ -93,6 +88,10 @@ func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, erro
 		}
 	}
 
+	err = orm.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
 	return orm, nil
 }
 
