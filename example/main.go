@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/silentred/kassadin"
+	"github.com/silentred/kassadin/db"
 )
 
 func main() {
@@ -17,6 +18,15 @@ func main() {
 }
 
 func initConfig(app *kassadin.App) error {
+	return nil
+}
+
+func initService(app *kassadin.App) error {
+	mm := db.NewMysqlManager(app, app.Config.Mysql)
+	if mm != nil {
+		app.Set("mysql", mm, nil)
+	}
+
 	return nil
 }
 
