@@ -25,8 +25,6 @@ dev: test build
 
 clean:
 	rm $(TARGET)
-	ls -lrt -d -1 storage/session/* | grep -v .gitignore | xargs rm -r
-	ls -lrt -d -1 storage/log/* | grep -v .gitignore | xargs rm -r
 
 update:
 	which glide >/dev/null || curl https://glide.sh/get | sh

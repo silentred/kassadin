@@ -4,7 +4,6 @@ name = "webapp"
 port = 8080
 
 logProvider = "file"
-logPath = "."
 logRotate = true
 logRotateType = "day"
 logLimit = "100MB"
