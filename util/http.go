@@ -1,16 +1,40 @@
 package util
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
 )
+
+type HTTPClientIface interface {
+	Get(*http.Request) ([]byte, int, error)
+	Post(*http.Request) ([]byte, int, error)
+}
+
+type HTTPClient struct {
+	Timeout int
+	client  *http.Client
+}
+
+func NewHTTPClient(timeout int, client *http.Client) *HTTPClient {
+	var c = http.DefaultClient
+	if client != nil {
+		c = client
+	}
+	hc := &HTTPClient{
+		Timeout: timeout,
+		client:  c,
+	}
+	hc.client.Timeout = time.Duration(timeout) * time.Second
+
+	return hc
+}
 
 // NewHTTPReqeust makes a http request
 func NewHTTPReqeust(method, url string, queries, headers map[string]string, body []byte) (*http.Request, error) {
@@ -40,46 +64,8 @@ func NewHTTPReqeust(method, url string, queries, headers map[string]string, body
 	return req, nil
 }
 
-type RequestConfig struct {
-	Params  map[string]string
-	Headers map[string]string
-	Timeout uint16
-	Body    []byte
-	Client  *http.Client
-}
-
-func NewReqeustConfig(params, headers map[string]string, timeout uint16, body []byte, client *http.Client) *RequestConfig {
-	if timeout <= 0 {
-		timeout = 10
-	}
-	config := &RequestConfig{
-		Params:  params,
-		Headers: headers,
-		Timeout: timeout,
-		Body:    body,
-		Client:  client,
-	}
-
-	return config
-}
-
-// HTTPGet returns http response body in []byte, timeout in second
-func HTTPGet(url string, config *RequestConfig) ([]byte, int, error) {
-	req, err := NewHTTPReqeust("GET", url, config.Params, config.Headers, nil)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	client := http.DefaultClient
-	if config.Client != nil {
-		client = config.Client
-	}
-
-	if config.Timeout > 0 {
-		client.Timeout = time.Duration(config.Timeout) * time.Second
-	}
-
-	res, err := client.Do(req)
+func (hc *HTTPClient) Do(req *http.Request) ([]byte, int, error) {
+	res, err := hc.client.Do(req)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -92,81 +78,45 @@ func HTTPGet(url string, config *RequestConfig) ([]byte, int, error) {
 	defer res.Body.Close()
 
 	if err != nil {
-
 		return nil, res.StatusCode, err
 	}
 
 	return b, res.StatusCode, nil
 }
 
-// HTTPGetFile store body in single file, return file and file's content type
-func HTTPGetFile(url string, config *RequestConfig) (outFName, contentType string, contentLength int64, err error) {
-	tmpFp, err := ioutil.TempFile("", "dl")
-	if err != nil {
-		return
-	}
-	defer tmpFp.Close()
-	outFName = tmpFp.Name()
-
-	req, err := NewHTTPReqeust("GET", url, config.Params, config.Headers, nil)
-	if err != nil {
-		return
-	}
-
-	client := http.DefaultClient
-	if config.Client != nil {
-		client = config.Client
-	}
-	client.Timeout = time.Duration(config.Timeout) * time.Second
-
-	res, err := client.Do(req)
-	if err != nil {
-		return
-	}
-	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("resp code is %d", res.StatusCode)
-		return
-	}
-
-	contentType = res.Header.Get("Content-Type")
-	contentLength, _ = strconv.ParseInt(res.Header.Get("Content-Length"), 10, 64)
-
-	reader := bufio.NewReader(res.Body)
-	defer res.Body.Close()
-
-	_, err = reader.WriteTo(tmpFp)
-	if err != nil {
-		return
-	}
-
-	return
+// Get returns http response body in []byte, timeout in second
+func (hc *HTTPClient) Get(req *http.Request) ([]byte, int, error) {
+	req.Method = "GET"
+	return hc.Do(req)
 }
 
-// HTTPPost do http post
-func HTTPPost(url string, config *RequestConfig) ([]byte, error) {
-	req, err := NewHTTPReqeust("POST", url, config.Params, config.Headers, config.Body)
+// Post do http post
+func (hc *HTTPClient) Post(req *http.Request) ([]byte, int, error) {
+	req.Method = "POST"
+	return hc.Do(req)
+}
+
+// GetReadCloser for downloading file
+func (hc *HTTPClient) GetReadCloser(req *http.Request) (io.ReadCloser, string, int, error) {
+	var err error
+	var res *http.Response
+
+	res, err = hc.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, "", 0, err
 	}
 
-	client := http.DefaultClient
-	if config.Client != nil {
-		client = config.Client
+	if res.StatusCode != http.StatusOK {
+		return nil, "", 0, fmt.Errorf("resp code is %d", res.StatusCode)
 	}
-	client.Timeout = time.Duration(config.Timeout) * time.Second
 
-	res, err := client.Do(req)
+	contentType := res.Header.Get("Content-Type")
+	contentLength, err := strconv.Atoi(res.Header.Get("Content-Length"))
 	if err != nil {
-		return nil, err
-	}
-	b, err := ioutil.ReadAll(res.Body)
-	defer res.Body.Close()
-
-	if err != nil {
-		return nil, err
+		return nil, "", 0, err
 	}
 
-	return b, nil
+	return res.Body, contentType, contentLength, nil
 }
 
 func MustLoadCertificates(privateKeyFile, certificateFile, caFile string) (tls.Certificate, *x509.CertPool) {
