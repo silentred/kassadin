@@ -15,6 +15,7 @@ import (
 type HTTPClientIface interface {
 	Get(*http.Request) ([]byte, int, error)
 	Post(*http.Request) ([]byte, int, error)
+	Do(*http.Request) ([]byte, int, error)
 }
 
 type HTTPClient struct {
