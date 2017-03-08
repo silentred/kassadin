@@ -8,8 +8,8 @@ const (
 	ModeDev  = "dev"
 	ModeProd = "prod"
 
-	ProvidorFile  = "file"
-	ProvidorRedis = "redis"
+	ProvidorFile   = "file"
+	ProvidorStdOut = "stdout"
 
 	RotateByDay  = "day"
 	RotateBySize = "size"

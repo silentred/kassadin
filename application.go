@@ -13,6 +13,8 @@ import (
 
 	"encoding/json"
 
+	"path/filepath"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
 	"github.com/silentred/kassadin/util"
@@ -165,31 +167,38 @@ func (app *App) GetConfigFile() string {
 	return configName
 }
 
-func (app *App) initLogger() {
+func (app *App) InitLogger() {
 	// new default Logger
 	var writer io.Writer
 	var spliter rotator.Spliter
+	var err error
 
 	logConfig := app.Config.Log
 
-	if logConfig.RotateEnable {
-		switch logConfig.RotateMode {
-		case RotateByDay:
-			spliter = rotator.NewDaySpliter()
-		case RotateBySize:
-			limitSize, err := strings.ParseByteSize(logConfig.RotateLimit) // 100 MB
+	switch logConfig.Providor {
+	case ProvidorFile:
+		if logConfig.RotateEnable {
+			switch logConfig.RotateMode {
+			case RotateByDay:
+				spliter = rotator.NewDaySpliter()
+			case RotateBySize:
+				limitSize, err := strings.ParseByteSize(logConfig.RotateLimit) // 100 MB
+				if err != nil {
+					log.Fatal(err)
+				}
+				spliter = rotator.NewSizeSpliter(uint64(limitSize))
+			default:
+				log.Fatalf("invalid RotateMode: %s", logConfig.RotateMode)
+			}
+
+			writer = rotator.NewFileRotator(logConfig.LogPath, app.Config.Name, "log", spliter)
+		} else {
+			writer, err = os.Open(filepath.Join(logConfig.LogPath, app.Config.Name+".log"))
 			if err != nil {
 				log.Fatal(err)
 			}
-			spliter = rotator.NewSizeSpliter(uint64(limitSize))
-		default:
-			log.Fatalf("invalid RotateMode: %s", logConfig.RotateMode)
 		}
-
-		writer = rotator.NewFileRotator(logConfig.LogPath, app.Config.Name, "log", spliter)
-	}
-
-	if writer == nil {
+	default:
 		writer = os.Stdout
 	}
 
@@ -271,7 +280,7 @@ func (app *App) RegisterShutdownHook(hook HookFunc) {
 // Start running the application
 func (app *App) Start() {
 	app.initConfig()
-	app.initLogger()
+	app.InitLogger()
 	app.initService()
 	app.initRoute()
 
