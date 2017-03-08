@@ -23,7 +23,7 @@ type AppConfig struct {
 	Sess  SessionConfig
 	Log   LogConfig
 	Mysql MysqlConfig
-	Redis RedisConfig
+	Redis RedisInstance
 }
 
 type SessionConfig struct {
@@ -59,5 +59,14 @@ func (inst MysqlInstance) String() string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8", inst.User, inst.Pwd, inst.Host, inst.Port, inst.Db)
 }
 
-type RedisConfig struct {
+type RedisInstance struct {
+	Name string `json:"name"`
+	Host string `json:"host"`
+	Pwd  string `json:"password"`
+	Port int    `json:"port"`
+	Db   int    `json:"database"`
+}
+
+func (inst RedisInstance) Address() string {
+	return fmt.Sprintf("%s:%d", inst.Host, inst.Port)
 }

@@ -30,6 +30,9 @@ func initService(app *kassadin.App) error {
 	}
 	app.Set("mysql", mm, nil)
 
+	redis := db.NewRedisClient(app.Config.Redis)
+	app.Set("redis", redis, nil)
+
 	return nil
 }
 

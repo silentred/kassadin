@@ -125,7 +125,7 @@ func (app *App) initConfig() {
 	config.Log = l
 
 	// TODO: session config
-	// TODO: mysql config
+	// mysql config
 	mysql := MysqlConfig{}
 	mysqlConfig := viper.Get("mysql")
 	mysqlConfigBytes, err := json.Marshal(mysqlConfig)
@@ -138,7 +138,14 @@ func (app *App) initConfig() {
 	}
 	config.Mysql = mysql
 
-	// TODO: redis config
+	// redis config
+	redis := RedisInstance{}
+	redis.Host = viper.GetString("redis.host")
+	redis.Port = viper.GetInt("redis.port")
+	redis.Db = viper.GetInt("redis.db")
+	redis.Pwd = viper.GetString("redis.password")
+	config.Redis = redis
+
 	app.Config = config
 
 	// hook
