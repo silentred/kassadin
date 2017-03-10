@@ -51,7 +51,7 @@ type MysqlInstance struct {
 	Port     int    `json:"port"`
 	User     string `json:"user"`
 	Pwd      string `json:"password"`
-	Db       string `json:"database"`
+	Db       string `json:"db"`
 	ReadOnly bool   `json:"read_only"`
 }
 

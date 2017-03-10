@@ -26,11 +26,15 @@ import (
 
 var (
 	// AppMode is App's running envirenment. Valid values are dev and prod
-	AppMode string
+	AppMode    string
+	ConfigFile string
+	LogPath    string
 )
 
 func init() {
 	flag.StringVar(&AppMode, "mode", "", "RunMode of the application: dev or prod")
+	flag.StringVar(&ConfigFile, "cfg", "", "absolute path of config file")
+	flag.StringVar(&LogPath, "logPath", ".", "logPath is where log file will be")
 }
 
 // HookFunc when app starting and tearing down
@@ -99,12 +103,17 @@ func (app *App) Inject(object interface{}) error {
 }
 
 // InitConfig in format of toml
-func (app *App) initConfig() {
+func (app *App) InitConfig() {
 	// use viper to resolve config.toml
-	var configName = app.GetConfigFile()
-	viper.AddConfigPath(".")
-	viper.AddConfigPath(util.SelfDir())
-	viper.SetConfigName(configName)
+	if ConfigFile == "" {
+		var configName = app.getConfigFile()
+		viper.AddConfigPath(".")
+		viper.AddConfigPath(util.SelfDir())
+		viper.SetConfigName(configName)
+	} else {
+		viper.SetConfigFile(ConfigFile)
+	}
+
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatal(err)
@@ -159,7 +168,7 @@ func (app *App) initConfig() {
 	}
 }
 
-func (app *App) GetConfigFile() string {
+func (app *App) getConfigFile() string {
 	var configName = "config"
 	if AppMode != "" {
 		configName = fmt.Sprintf("%s.%s", "config", AppMode)
@@ -277,16 +286,18 @@ func (app *App) RegisterShutdownHook(hook HookFunc) {
 	app.shutdownHook = hook
 }
 
-// Start running the application
-func (app *App) Start() {
-	app.initConfig()
+func (app *App) Init() {
+	app.InitConfig()
 	app.InitLogger()
 	app.initService()
 	app.initRoute()
+}
 
+// Start running the application
+func (app *App) Start() {
+	app.Init()
 	//app.route.Start(fmt.Sprintf(":%d", app.config.Port))
 	app.graceStart()
-
 	app.shutdown()
 }
 
