@@ -87,19 +87,19 @@ func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, erro
 
 	if mm.Application != nil {
 		output = mm.Application.Logger("default").Out
+		// set Logger output
+		logger := xorm.NewSimpleLogger(output)
 
 		if mm.Application.Config.Mode == kassadin.ModeDev {
 			orm.ShowSQL(true)
 			orm.ShowExecTime(true)
-			orm.Logger().SetLevel(core.LOG_DEBUG)
+			logger.ShowSQL(true)
+			logger.SetLevel(core.LOG_DEBUG)
 		} else {
-			orm.Logger().SetLevel(core.LOG_ERR)
+			logger.SetLevel(core.LOG_ERR)
 		}
+		orm.SetLogger(logger)
 	}
-
-	// set Logger output
-	logger := xorm.NewSimpleLogger(output)
-	orm.SetLogger(logger)
 
 	err = orm.Ping()
 	if err != nil {

@@ -81,6 +81,11 @@ func (app *App) Logger(name string) *logrus.Logger {
 	return nil
 }
 
+// DefaultLogger gets default logger
+func (app *App) DefaultLogger() *logrus.Logger {
+	return app.Logger("")
+}
+
 // Set object into app.Store and Map it into app.Injector
 func (app *App) Set(key string, object interface{}, ifacePtr interface{}) {
 	app.Store.Set(key, object)
