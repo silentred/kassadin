@@ -1,61 +1,89 @@
 package filter
 
 import (
+	"strconv"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/labstack/gommon/log"
+	"github.com/silentred/echorus"
 )
 
-var (
-	reqCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "req_count",
-		Help: "total count of request",
-	}, []string{"service"})
-
-	reqDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
-		Name: "req_duration_us",
-		Help: "latency of request in microsecond",
-	}, []string{"service"})
-)
-
-// func init() {
-// 	prometheus.MustRegister(reqCount)
-// 	prometheus.MustRegister(reqDuration)
-
-// 	// Expose the registered metrics via HTTP.
-// 	http.Handle("/metrics", promhttp.Handler())
-// 	go http.ListenAndServe(":8088", nil)
-// }
-
-func GetPrometheusLogHandler() echo.HandlerFunc {
-	prometheus.MustRegister(reqCount)
-	prometheus.MustRegister(reqDuration)
-
-	handler := func(e echo.Context) error {
-		promhttp.Handler().ServeHTTP(e.Response().Writer, e.Request())
-		return nil
+type (
+	// LoggerConfig defines the config for Logger middleware.
+	LoggerConfig struct {
+		// Skipper defines a function to skip middleware.
+		Skipper Skipper
+		Logger  *echorus.Echorus
+		Format  logrus.Formatter
 	}
+)
 
-	return handler
+func NewConfig(logger *echorus.Echorus) LoggerConfig {
+	return LoggerConfig{
+		Skipper: DefaultSkipper,
+		Logger:  logger,
+		Format:  echorus.TextFormat,
+	}
 }
 
-func Metrics() echo.MiddlewareFunc {
+// Logger returns a middleware that logs HTTP requests.
+func Logger(logger *echorus.Echorus) echo.MiddlewareFunc {
+	return LoggerWithConfig(NewConfig(logger))
+}
+
+// LoggerWithConfig returns a Logger middleware with config.
+func LoggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
+	// Defaults
+	if config.Skipper == nil {
+		config.Skipper = DefaultSkipper
+	}
+	if config.Format != nil {
+		config.Logger.SetFormat(config.Format)
+	}
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			t := time.Now()
+			if config.Skipper(c) {
+				return next(c)
+			}
 
+			req := c.Request()
+			res := c.Response()
+			start := time.Now()
 			if err = next(c); err != nil {
 				c.Error(err)
 			}
 
-			duration := float64(time.Now().Sub(t).Nanoseconds()) / 1000
+			stop := time.Now()
 
-			reqCount.WithLabelValues("http").Add(1)
-			reqDuration.WithLabelValues("http").Observe(duration)
+			p := req.URL.Path
+			if p == "" {
+				p = "/"
+			}
 
-			return nil
+			cl := req.Header.Get(echo.HeaderContentLength)
+			if cl == "" {
+				cl = "0"
+			}
+			json := log.JSON{
+				"time_unix":   strconv.FormatInt(time.Now().Unix(), 10),
+				"remote_ip":   c.RealIP(),
+				"host":        req.Host,
+				"uri":         req.RequestURI,
+				"method":      req.Method,
+				"path":        p,
+				"user_agent":  req.UserAgent(),
+				"status":      res.Status,
+				"latency":     strconv.FormatInt(int64(stop.Sub(start)), 10),
+				"latency_str": stop.Sub(start).String(),
+				"bytes_in":    cl,
+				"bytes_out":   strconv.FormatInt(res.Size, 10),
+			}
+
+			config.Logger.Infoj(json)
+			return
 		}
 	}
 }

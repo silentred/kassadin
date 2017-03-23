@@ -15,8 +15,9 @@ import (
 
 	"path/filepath"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
+	elog "github.com/labstack/gommon/log"
+	"github.com/silentred/echorus"
 	"github.com/silentred/kassadin/util"
 	"github.com/silentred/kassadin/util/container"
 	"github.com/silentred/kassadin/util/rotator"
@@ -46,7 +47,7 @@ type App struct {
 	Injector container.Injector
 	Route    *echo.Echo
 
-	loggers map[string]*logrus.Logger
+	loggers map[string]*echorus.Echorus
 	Config  AppConfig
 
 	configHook   HookFunc
@@ -62,7 +63,7 @@ func NewApp() *App {
 		Store:    &container.Map{},
 		Injector: container.NewInjector(),
 		Route:    echo.New(),
-		loggers:  make(map[string]*logrus.Logger),
+		loggers:  make(map[string]*echorus.Echorus),
 	}
 	// register App itself
 	app.Set("app", app, nil)
@@ -70,7 +71,7 @@ func NewApp() *App {
 }
 
 // Logger of name
-func (app *App) Logger(name string) *logrus.Logger {
+func (app *App) Logger(name string) *echorus.Echorus {
 	if name == "" {
 		return app.loggers["default"]
 	}
@@ -82,7 +83,7 @@ func (app *App) Logger(name string) *logrus.Logger {
 }
 
 // DefaultLogger gets default logger
-func (app *App) DefaultLogger() *logrus.Logger {
+func (app *App) DefaultLogger() *echorus.Echorus {
 	return app.Logger("")
 }
 
@@ -216,20 +217,21 @@ func (app *App) InitLogger() {
 		writer = os.Stdout
 	}
 
-	defaultLogger := logrus.New()
-	defaultLogger.Formatter = &logrus.JSONFormatter{}
-	defaultLogger.Out = writer
+	defaultLogger := echorus.NewLogger()
+	defaultLogger.SetFormat(echorus.TextFormat)
+	defaultLogger.SetOutput(writer)
 	switch app.Config.Mode {
 	case ModeDev:
-		defaultLogger.Level = logrus.DebugLevel
+		defaultLogger.SetLevel(elog.DEBUG)
 	case ModeProd:
-		defaultLogger.Level = logrus.ErrorLevel
+		defaultLogger.SetLevel(elog.ERROR)
 	default:
-		defaultLogger.Level = logrus.DebugLevel
+		defaultLogger.SetLevel(elog.DEBUG)
 	}
 
 	// set logger
 	app.loggers["default"] = defaultLogger
+	app.Route.Logger = defaultLogger
 
 	// hook
 	if app.loggerHook != nil {
@@ -315,7 +317,7 @@ func (app *App) graceStart() error {
 	}()
 
 	// Wait for interrupt signal to gracefully shutdown the server with
-	// a timeout of 10 seconds.
+	// a timeout of 5 seconds.
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
 	<-quit

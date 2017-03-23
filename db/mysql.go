@@ -86,7 +86,7 @@ func (mm *MysqlManager) newORM(mysql kassadin.MysqlInstance) (*xorm.Engine, erro
 	orm.SetMaxOpenConns(MaxOpen)
 
 	if mm.Application != nil {
-		output = mm.Application.Logger("default").Out
+		output = mm.Application.Logger("default").Output()
 		// set Logger output
 		logger := xorm.NewSimpleLogger(output)
 
