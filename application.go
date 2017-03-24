@@ -50,11 +50,11 @@ type App struct {
 	loggers map[string]*echorus.Echorus
 	Config  AppConfig
 
-	configHook   HookFunc
-	loggerHook   HookFunc
-	serviceHook  HookFunc
-	routeHook    HookFunc
-	shutdownHook HookFunc
+	configHooks   []HookFunc
+	loggerHooks   []HookFunc
+	serviceHooks  []HookFunc
+	routeHooks    []HookFunc
+	shutdownHooks []HookFunc
 }
 
 // NewApp gets a new application
@@ -166,12 +166,7 @@ func (app *App) InitConfig() {
 	app.Config = config
 
 	// hook
-	if app.configHook != nil {
-		err = app.configHook(app)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	app.runConfigHooks()
 }
 
 func (app *App) getConfigFile() string {
@@ -234,63 +229,91 @@ func (app *App) InitLogger() {
 	app.Route.Logger = defaultLogger
 
 	// hook
-	if app.loggerHook != nil {
-		err := app.loggerHook(app)
-		if err != nil {
-			log.Fatal(err)
+	app.runLoggerHooks()
+}
+
+func (app *App) runConfigHooks() {
+	var err error
+	for _, f := range app.configHooks {
+		if f != nil {
+			err = f(app)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+}
+
+func (app *App) runLoggerHooks() {
+	var err error
+	for _, f := range app.loggerHooks {
+		if f != nil {
+			err = f(app)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
 
 func (app *App) initService() {
 	// hoook
-	if app.serviceHook != nil {
-		err := app.serviceHook(app)
-		if err != nil {
-			log.Fatal(err)
+	var err error
+	for _, f := range app.serviceHooks {
+		if f != nil {
+			err = f(app)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
 
 func (app *App) initRoute() {
 	// hook
-	if app.routeHook != nil {
-		err := app.routeHook(app)
-		if err != nil {
-			log.Fatal(err)
+	var err error
+	for _, f := range app.routeHooks {
+		if f != nil {
+			err = f(app)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
+
 }
 
 func (app *App) shutdown() {
-	// hook
-	if app.shutdownHook != nil {
-		err := app.shutdownHook(app)
-		if err != nil {
-			log.Fatal(err)
+	var err error
+	for _, f := range app.shutdownHooks {
+		if f != nil {
+			err = f(app)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
 
 // RegisterConfigHook at initConfig
-func (app *App) RegisterConfigHook(hook HookFunc) {
-	app.configHook = hook
+func (app *App) RegisterConfigHook(hooks ...HookFunc) {
+	app.configHooks = append(app.configHooks, hooks...)
 }
 
-func (app *App) RegisterLoggerHook(hook HookFunc) {
-	app.loggerHook = hook
+func (app *App) RegisterLoggerHook(hooks ...HookFunc) {
+	app.loggerHooks = append(app.loggerHooks, hooks...)
 }
 
-func (app *App) RegisterServiceHook(hook HookFunc) {
-	app.serviceHook = hook
+func (app *App) RegisterServiceHook(hooks ...HookFunc) {
+	app.serviceHooks = append(app.serviceHooks, hooks...)
 }
 
-func (app *App) RegisterRouteHook(hook HookFunc) {
-	app.routeHook = hook
+func (app *App) RegisterRouteHook(hooks ...HookFunc) {
+	app.routeHooks = append(app.routeHooks, hooks...)
 }
 
-func (app *App) RegisterShutdownHook(hook HookFunc) {
-	app.shutdownHook = hook
+func (app *App) RegisterShutdownHook(hooks ...HookFunc) {
+	app.shutdownHooks = append(app.shutdownHooks, hooks...)
 }
 
 func (app *App) Init() {
