@@ -213,6 +213,7 @@ func (app *App) InitLogger() {
 	}
 
 	defaultLogger := echorus.NewLogger()
+	defaultLogger.SetPrefix(app.Config.Name)
 	defaultLogger.SetFormat(echorus.TextFormat)
 	defaultLogger.SetOutput(writer)
 	switch app.Config.Mode {
