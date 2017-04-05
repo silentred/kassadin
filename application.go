@@ -220,7 +220,7 @@ func (app *App) InitLogger() {
 	case ModeDev:
 		defaultLogger.SetLevel(elog.DEBUG)
 	case ModeProd:
-		defaultLogger.SetLevel(elog.ERROR)
+		defaultLogger.SetLevel(elog.INFO)
 	default:
 		defaultLogger.SetLevel(elog.DEBUG)
 	}
