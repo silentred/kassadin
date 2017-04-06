@@ -8,6 +8,7 @@ logPath = "/tmp"
 logRotate = true
 logRotateType = "day"
 logLimit = "100MB"
+logExt = "log"
 
 [session]
 enable = false

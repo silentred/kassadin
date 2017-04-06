@@ -82,6 +82,14 @@ func (app *App) Logger(name string) *echorus.Echorus {
 	return nil
 }
 
+func (app *App) SetLogger(name string, logger *echorus.Echorus) bool {
+	if _, ok := app.loggers[name]; ok {
+		return false
+	}
+	app.loggers[name] = logger
+	return true
+}
+
 // DefaultLogger gets default logger
 func (app *App) DefaultLogger() *echorus.Echorus {
 	return app.Logger("")
@@ -139,6 +147,7 @@ func (app *App) InitConfig() {
 	l.RotateEnable = viper.GetBool("app.logRotate")
 	l.RotateMode = viper.GetString("app.logRotateType")
 	l.RotateLimit = viper.GetString("app.logLimit")
+	l.Suffix = viper.GetString("app.logExt")
 	config.Log = l
 
 	// TODO: session config
@@ -178,52 +187,15 @@ func (app *App) getConfigFile() string {
 }
 
 func (app *App) InitLogger() {
-	// new default Logger
-	var writer io.Writer
-	var spliter rotator.Spliter
-	var err error
-
-	logConfig := app.Config.Log
-
-	switch logConfig.Providor {
-	case ProvidorFile:
-		if logConfig.RotateEnable {
-			switch logConfig.RotateMode {
-			case RotateByDay:
-				spliter = rotator.NewDaySpliter()
-			case RotateBySize:
-				limitSize, err := strings.ParseByteSize(logConfig.RotateLimit) // 100 MB
-				if err != nil {
-					log.Fatal(err)
-				}
-				spliter = rotator.NewSizeSpliter(uint64(limitSize))
-			default:
-				log.Fatalf("invalid RotateMode: %s", logConfig.RotateMode)
-			}
-
-			writer = rotator.NewFileRotator(logConfig.LogPath, app.Config.Name, "log", spliter)
-		} else {
-			writer, err = os.Open(filepath.Join(logConfig.LogPath, app.Config.Name+".log"))
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	default:
-		writer = os.Stdout
-	}
-
-	defaultLogger := echorus.NewLogger()
-	defaultLogger.SetPrefix(app.Config.Name)
-	defaultLogger.SetFormat(echorus.TextFormat)
-	defaultLogger.SetOutput(writer)
+	var level elog.Lvl
 	switch app.Config.Mode {
-	case ModeDev:
-		defaultLogger.SetLevel(elog.DEBUG)
 	case ModeProd:
-		defaultLogger.SetLevel(elog.INFO)
+		level = elog.INFO
 	default:
-		defaultLogger.SetLevel(elog.DEBUG)
+		level = elog.DEBUG
 	}
+	// new default Logger
+	defaultLogger := NewLogger(app.Config.Name, level, app.Config.Log)
 
 	// set logger
 	app.loggers["default"] = defaultLogger
@@ -353,4 +325,51 @@ func (app *App) graceStart() error {
 	}
 
 	return nil
+}
+
+// NewLogger return a new
+func NewLogger(appName string, level elog.Lvl, config LogConfig) *echorus.Echorus {
+	// new default Logger
+	var writer io.Writer
+	var spliter rotator.Spliter
+	var err error
+
+	if config.Suffix == "" {
+		config.Suffix = "log"
+	}
+
+	switch config.Providor {
+	case ProvidorFile:
+		if config.RotateEnable {
+			switch config.RotateMode {
+			case RotateByDay:
+				spliter = rotator.NewDaySpliter()
+			case RotateBySize:
+				limitSize, err := strings.ParseByteSize(config.RotateLimit) // 100 MB
+				if err != nil {
+					log.Fatal(err)
+				}
+				spliter = rotator.NewSizeSpliter(uint64(limitSize))
+			default:
+				log.Fatalf("invalid RotateMode: %s", config.RotateMode)
+			}
+
+			writer = rotator.NewFileRotator(config.LogPath, appName, config.Suffix, spliter)
+		} else {
+			writer, err = os.Open(filepath.Join(config.LogPath, appName+"."+config.Suffix))
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	default:
+		writer = os.Stdout
+	}
+
+	logger := echorus.NewLogger()
+	logger.SetPrefix(appName)
+	logger.SetFormat(echorus.TextFormat)
+	logger.SetOutput(writer)
+	logger.SetLevel(level)
+
+	return logger
 }

@@ -38,6 +38,7 @@ type LogConfig struct {
 	LogPath      string
 	RotateMode   string
 	RotateLimit  string
+	Suffix       string
 	RotateEnable bool
 }
 
